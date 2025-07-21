@@ -242,7 +242,7 @@ export const getAllLevel3Creatures = (): Creature[] => {
 }
 
 // Emojis for elements
-export const elementEmojis: Record<Element, string> = {
+const elementEmojis: Record<Element, string> = {
   Fire: "🔥",
   Water: "💧",
   Earth: "🌳",

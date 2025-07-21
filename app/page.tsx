@@ -15,7 +15,7 @@ import {
 import ArenaSlot from "@/components/arena-slot"
 import { CreatureCard } from "@/components/creature-card"
 import DiceComponent from "@/components/dice-component"
-import { RotateCcw } from "lucide-react"
+import { RotateCcw, Trophy } from "lucide-react"
 
 interface PlayerState {
   activeCreature: Creature | null
@@ -53,12 +53,7 @@ interface GameState {
   winner: "player" | "opponent" | null
   skipNextTurnFor: "player" | "opponent" | null
   playerSelectedCreatureIds: string[]
-  selectionSubPhase:
-    | "chooseElement"
-    | "chooseCreature"
-    | "chooseSpecificCreatureForSet1"
-    | "chooseSpecificCreatureForSet2"
-    | null
+  selectionSubPhase: "chooseElement" | "chooseCreature" | "chooseSpecificCreatureForSet2" | "chooseChallengeType" | null
   currentElementSelection: Element | null
   creaturesToChooseFrom: Creature[] | null
   replacementPhaseForPlayer: "player" | "opponent" | null
@@ -89,21 +84,17 @@ interface GameState {
   // Critical animations
   isCriticalMiss: boolean
   isCriticalHit: boolean
+
+  isEndlessModeActive: boolean
+  endlessWins: number
+  endlessTrophies: Record<string, number>
+  isAchievementsOpen: boolean
 }
 
 const gameModes: GameMode[] = [
   {
-    id: "set-1",
-    name: "Duel of Spirits",
-    description: "1v1 combat. First knockout wins.",
-    playerCreatureCount: 1,
-    evolutionTurnsRequired: Number.POSITIVE_INFINITY,
-    allowEvolution: false,
-    startingHp: 75,
-  },
-  {
     id: "set-2",
-    name: "Card Mode",
+    name: "Full Power Duel",
     description: "Full cards with stats, no evolution.",
     playerCreatureCount: 1,
     evolutionTurnsRequired: Number.POSITIVE_INFINITY,
@@ -112,10 +103,10 @@ const gameModes: GameMode[] = [
   },
   {
     id: "set-3",
-    name: "Evolution Mode",
+    name: "Evolution Clash",
     description: "Full evolution lines, tags, evolution buffs.",
     playerCreatureCount: 3,
-    evolutionTurnsRequired: 2, // Changed from 1 to 2
+    evolutionTurnsRequired: 2,
     allowEvolution: true,
     startingHp: 50,
   },
@@ -128,61 +119,71 @@ const elementEmojis: Record<Element, string> = {
   Air: "🌬️",
 }
 
+const initialGameProgressState = {
+  diceValue: 1,
+  turn: "player",
+  isRolling: false,
+  hasRolledThisTurn: false,
+  player: { activeCreature: null, benchCreatures: [], skippedTurn: false },
+  opponent: { activeCreature: null, benchCreatures: [], skippedTurn: false },
+  isGameOver: false,
+  winner: null,
+  skipNextTurnFor: null,
+  playerSelectedCreatureIds: [],
+  selectionSubPhase: null,
+  currentElementSelection: null,
+  creaturesToChooseFrom: null,
+  replacementPhaseForPlayer: null,
+  needsReplacementRoll: false,
+  isTaggingOut: false,
+  playerActiveIsAttacking: false,
+  opponentActiveIsAttacking: false,
+  playerActiveIsShaking: false,
+  opponentActiveIsShaking: false,
+  playerActiveIsDefending: false,
+  opponentActiveIsDefending: false,
+  damageAnimations: [],
+  damagedCreatures: new Set(),
+  selectedCardForDetails: null,
+  isCardDetailsOpen: false,
+  lastDieRoll: null,
+  lastDieRollPlayer: null,
+  isCorrupted: false,
+  corruptedTurnsRemaining: 0,
+  corruptedPlayer: null,
+  hasPlayerEvolved: false,
+  hasOpponentEvolved: false,
+  coinFlipResult: null,
+  isCriticalMiss: false,
+  isCriticalHit: false,
+  endlessWins: 0,
+  isAchievementsOpen: false,
+}
+
 export default function CardGameArena() {
   const [gameState, setGameState] = useState<GameState>(() => {
     return {
+      ...initialGameProgressState,
       gamePhase: "setup",
-      diceValue: 1,
-      turn: "player",
-      isRolling: false,
-      hasRolledThisTurn: false,
-      player: {
-        activeCreature: null,
-        benchCreatures: [],
-        skippedTurn: false,
-      },
-      opponent: {
-        activeCreature: null,
-        benchCreatures: [],
-        skippedTurn: false,
-      },
-      isGameOver: false,
-      winner: null,
-      skipNextTurnFor: null,
-      playerSelectedCreatureIds: [],
-      selectionSubPhase: null,
-      currentElementSelection: null,
-      creaturesToChooseFrom: null,
-      replacementPhaseForPlayer: null,
-      needsReplacementRoll: false,
-      isTaggingOut: false,
-      playerActiveIsAttacking: false,
-      opponentActiveIsAttacking: false,
-      playerActiveIsShaking: false,
-      opponentActiveIsShaking: false,
-      playerActiveIsDefending: false,
-      opponentActiveIsDefending: false,
       selectedGameMode: null,
-      damageAnimations: [],
-      damagedCreatures: new Set(),
-      selectedCardForDetails: null,
-      isCardDetailsOpen: false,
-
-      // Corrupted Die mechanic
-      lastDieRoll: null,
-      lastDieRollPlayer: null,
-      isCorrupted: false,
-      corruptedTurnsRemaining: 0,
-      corruptedPlayer: null,
-      hasPlayerEvolved: false,
-      hasOpponentEvolved: false,
-      coinFlipResult: null,
-
-      // Critical animations
-      isCriticalMiss: false,
-      isCriticalHit: false,
+      isEndlessModeActive: false,
+      endlessTrophies: {},
+      isAchievementsOpen: false,
     }
   })
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const trophies: Record<string, number> = {}
+      gameModes.forEach((mode) => {
+        const trophy = localStorage.getItem(`endless_trophy_${mode.id}`)
+        if (trophy) {
+          trophies[mode.id] = Number.parseInt(trophy, 10)
+        }
+      })
+      setGameState((prev) => ({ ...prev, endlessTrophies: trophies }))
+    }
+  }, [])
 
   const addToLog = useCallback((message: string) => {
     console.log(`[Game Log] ${message}`)
@@ -223,60 +224,61 @@ export default function CardGameArena() {
   }, [])
 
   const restartGame = useCallback(() => {
-    setGameState({
+    setGameState((prev) => ({
+      ...initialGameProgressState,
       gamePhase: "setup",
-      diceValue: 1,
-      turn: "player",
-      isRolling: false,
-      hasRolledThisTurn: false,
-      player: {
-        activeCreature: null,
-        benchCreatures: [],
-        skippedTurn: false,
-      },
-      opponent: {
-        activeCreature: null,
-        benchCreatures: [],
-        skippedTurn: false,
-      },
-      isGameOver: false,
-      winner: null,
-      skipNextTurnFor: null,
-      playerSelectedCreatureIds: [],
-      selectionSubPhase: null,
-      currentElementSelection: null,
-      creaturesToChooseFrom: null,
-      replacementPhaseForPlayer: null,
-      needsReplacementRoll: false,
-      isTaggingOut: false,
-      playerActiveIsAttacking: false,
-      opponentActiveIsAttacking: false,
-      playerActiveIsShaking: false,
-      opponentActiveIsShaking: false,
-      playerActiveIsDefending: false,
-      opponentActiveIsDefending: false,
       selectedGameMode: null,
-      damageAnimations: [],
-      damagedCreatures: new Set(),
-      selectedCardForDetails: null,
-      isCardDetailsOpen: false,
-
-      // Reset corruption state
-      lastDieRoll: null,
-      lastDieRollPlayer: null,
-      isCorrupted: false,
-      corruptedTurnsRemaining: 0,
-      corruptedPlayer: null,
-      hasPlayerEvolved: false,
-      hasOpponentEvolved: false,
-      coinFlipResult: null,
-
-      // Reset critical animations
-      isCriticalMiss: false,
-      isCriticalHit: false,
-    })
+      isEndlessModeActive: false,
+      endlessTrophies: prev.endlessTrophies,
+      isAchievementsOpen: false,
+    }))
     addToLog("Game restarted. Select a game mode to begin!")
   }, [addToLog])
+
+  const handleBackToMenu = useCallback(() => {
+    setGameState((prev) => ({
+      ...initialGameProgressState,
+      gamePhase: "modeSelection",
+      selectedGameMode: null,
+      isEndlessModeActive: false,
+      endlessTrophies: prev.endlessTrophies,
+      isAchievementsOpen: false,
+    }))
+    addToLog("Returned to game mode selection.")
+  }, [addToLog])
+
+  const handleRestartCurrentMode = useCallback(() => {
+    setGameState((prev) => {
+      if (!prev.selectedGameMode) {
+        // Fallback to a full menu return if something went wrong
+        return {
+          ...initialGameProgressState,
+          gamePhase: "modeSelection",
+          selectedGameMode: null,
+          isEndlessModeActive: false,
+          endlessTrophies: prev.endlessTrophies,
+          isAchievementsOpen: false,
+        }
+      }
+      return {
+        ...initialGameProgressState,
+        gamePhase: "instructions",
+        selectedGameMode: prev.selectedGameMode,
+        isEndlessModeActive: prev.isEndlessModeActive,
+        endlessTrophies: prev.endlessTrophies,
+        isAchievementsOpen: false,
+      }
+    })
+    addToLog("Restarting current game mode.")
+  }, [addToLog])
+
+  const openAchievements = useCallback(() => {
+    setGameState((prev) => ({ ...prev, isAchievementsOpen: true }))
+  }, [])
+
+  const closeAchievements = useCallback(() => {
+    setGameState((prev) => ({ ...prev, isAchievementsOpen: false }))
+  }, [])
 
   const handleCardDetailView = useCallback((creature: Creature) => {
     setGameState((prev) => ({
@@ -329,8 +331,8 @@ export default function CardGameArena() {
         finalDamage += 20
       }
 
-      // Apply weakness/resistance only if not Set 1 (Basic) and not a critical miss
-      if (gameState.selectedGameMode?.id !== "set-1" && !isCriticalMiss) {
+      // Apply weakness/resistance only if not a critical miss
+      if (!isCriticalMiss) {
         if (defender.weakness === attacker.element) {
           finalDamage += 10
           addToLog(`${defender.name} is weak to ${attacker.element}! Extra 10 damage.`)
@@ -377,99 +379,185 @@ export default function CardGameArena() {
       addToLog(`${defender.name} took ${finalDamage} damage. HP: ${newHp}/${defender.maxHp}`)
       return newHp
     },
-    [addToLog, gameState.selectedGameMode?.id, addDamageAnimation],
+    [addToLog, addDamageAnimation],
   )
+
+  const generateOpponentForEndlessMode = useCallback((winCount: number, gameMode: GameMode): PlayerState => {
+    const opponentCreatureIds: string[] = []
+    let creaturesForOpponentSelection: Creature[] = []
+
+    if (gameMode.id === "set-2") {
+      creaturesForOpponentSelection = getAllLevel3Creatures()
+    } else {
+      // set-3
+      creaturesForOpponentSelection = getAllBasicCreatures()
+    }
+
+    const tempAvailable = [...creaturesForOpponentSelection]
+    while (opponentCreatureIds.length < gameMode.playerCreatureCount && tempAvailable.length > 0) {
+      const randomIndex = Math.floor(Math.random() * tempAvailable.length)
+      opponentCreatureIds.push(tempAvailable[randomIndex].id)
+      tempAvailable.splice(randomIndex, 1)
+    }
+
+    const hpBuff = 1 + winCount * 0.1 // 10% HP buff per win
+
+    const opponentCreatureInstances = opponentCreatureIds.map((id) => {
+      const template = getCreatureById(id)!
+      const baseHp = gameMode.id === "set-2" ? template.maxHp : gameMode.startingHp
+      const creatureMaxHp = baseHp * hpBuff
+      return {
+        ...createCreature(
+          template.id,
+          template.name,
+          template.element,
+          Math.floor(creatureMaxHp),
+          template.weakness,
+          template.resistance,
+          template.ability,
+          template.stage,
+          template.evolutionLine,
+        ),
+        isFaceUp: true,
+      }
+    })
+
+    return {
+      activeCreature: opponentCreatureInstances[0],
+      benchCreatures: opponentCreatureInstances.slice(1),
+      skippedTurn: false,
+    }
+  }, [])
+
+  const handleEndlessNextBattleSetup = useCallback(() => {
+    setGameState((prev) => {
+      const newWins = prev.endlessWins + 1
+      addToLog(`Victory! You have ${newWins} wins. Prepare for the next challenger!`)
+
+      const healCreature = (c: Creature | null): Creature | null => {
+        if (!c) return null
+        const wasDefeated = c.currentHp <= 0
+        const newHp = wasDefeated ? Math.floor(c.maxHp * 0.5) : Math.max(c.currentHp, Math.floor(c.maxHp * 0.75))
+        return { ...c, currentHp: newHp, turnsSurvived: 0 }
+      }
+
+      const healedActive = healCreature(prev.player.activeCreature)
+      const healedBench = prev.player.benchCreatures.map(healCreature).filter((c): c is Creature => c !== null)
+
+      const newOpponentState = generateOpponentForEndlessMode(newWins, prev.selectedGameMode!)
+
+      return {
+        ...prev,
+        endlessWins: newWins,
+        player: {
+          ...prev.player,
+          activeCreature: healedActive,
+          benchCreatures: healedBench,
+        },
+        opponent: newOpponentState,
+        turn: "player",
+        hasRolledThisTurn: false,
+        isRolling: false,
+        replacementPhaseForPlayer: null,
+        playerActiveIsAttacking: false,
+        opponentActiveIsAttacking: false,
+        playerActiveIsShaking: false,
+        opponentActiveIsShaking: false,
+        playerActiveIsDefending: false,
+        opponentActiveIsDefending: false,
+      }
+    })
+  }, [addToLog, generateOpponentForEndlessMode])
+
+  const handleEndlessRunEnd = useCallback(() => {
+    setGameState((prev) => {
+      const currentWins = prev.endlessWins
+      const modeId = prev.selectedGameMode!.id
+      const existingTrophy = prev.endlessTrophies[modeId] || 0
+      const newTrophies = { ...prev.endlessTrophies }
+
+      if (currentWins > existingTrophy) {
+        addToLog(`New record! You achieved ${currentWins} wins!`)
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`endless_trophy_${modeId}`, currentWins.toString())
+        }
+        newTrophies[modeId] = currentWins
+      } else {
+        addToLog(`Your run ended with ${currentWins} wins.`)
+      }
+
+      return {
+        ...prev,
+        isGameOver: true,
+        winner: "opponent",
+        gamePhase: "gameOver",
+        endlessTrophies: newTrophies,
+      }
+    })
+  }, [addToLog])
 
   const checkWinCondition = useCallback(() => {
     setGameState((prev) => {
-      let newState = { ...prev }
+      const newState = { ...prev }
+      let playerLost = false
+      let opponentLost = false
 
-      // For Set 1 and Set 2 (now both 1v1 knockout)
-      if (newState.selectedGameMode?.id === "set-1" || newState.selectedGameMode?.id === "set-2") {
-        if (newState.player.activeCreature && newState.player.activeCreature.currentHp <= 0) {
-          addToLog(`${newState.player.activeCreature.name} was knocked out! Opponent wins!`)
-          newState = {
-            ...newState,
-            isGameOver: true,
-            winner: "opponent",
-            gamePhase: "gameOver",
-          }
-        } else if (newState.opponent.activeCreature && newState.opponent.activeCreature.currentHp <= 0) {
-          addToLog(`${newState.opponent.activeCreature.name} was knocked out! Player wins!`)
-          newState = {
-            ...newState,
-            isGameOver: true,
-            winner: "player",
-            gamePhase: "gameOver",
-          }
-        }
-        return newState
-      }
-
-      // Logic for Set 3 (multi-creature, replacement phase)
-      if (newState.player.activeCreature && newState.player.activeCreature.currentHp <= 0) {
-        addToLog(`${newState.player.activeCreature.name} was knocked out!`)
-        const viableBench = newState.player.benchCreatures.filter((c) => c.currentHp > 0)
-        if (viableBench.length > 0) {
+      if (newState.selectedGameMode?.id === "set-2") {
+        playerLost = !!(newState.player.activeCreature && newState.player.activeCreature.currentHp <= 0)
+        opponentLost = !!(newState.opponent.activeCreature && newState.opponent.activeCreature.currentHp <= 0)
+      } else {
+        // Set 3 logic
+        const isPlayerActiveDefeated = !!(
+          newState.player.activeCreature && newState.player.activeCreature.currentHp <= 0
+        )
+        const hasPlayerBench = newState.player.benchCreatures.some((c) => c.currentHp > 0)
+        if (isPlayerActiveDefeated && !hasPlayerBench) {
+          playerLost = true
+        } else if (isPlayerActiveDefeated && hasPlayerBench) {
           addToLog("Player must choose a replacement.")
-          newState = { ...newState, replacementPhaseForPlayer: "player" }
-        } else {
-          addToLog("Player has no creatures left! Opponent wins!")
-          newState = {
-            ...newState,
-            isGameOver: true,
-            winner: "opponent",
-            gamePhase: "gameOver",
-          }
+          return { ...newState, replacementPhaseForPlayer: "player" }
         }
-      }
 
-      if (newState.opponent.activeCreature && newState.opponent.activeCreature.currentHp <= 0) {
-        addToLog(`${newState.opponent.activeCreature.name} was knocked out!`)
-        const viableBench = newState.opponent.benchCreatures.filter((c) => c.currentHp > 0)
-        if (viableBench.length > 0) {
+        const isOpponentActiveDefeated = !!(
+          newState.opponent.activeCreature && newState.opponent.activeCreature.currentHp <= 0
+        )
+        const hasOpponentBench = newState.opponent.benchCreatures.some((c) => c.currentHp > 0)
+        if (isOpponentActiveDefeated && !hasOpponentBench) {
+          opponentLost = true
+        } else if (isOpponentActiveDefeated && hasOpponentBench) {
+          const viableBench = newState.opponent.benchCreatures.filter((c) => c.currentHp > 0)
           const replacement = viableBench[Math.floor(Math.random() * viableBench.length)]
-          newState = handleCreatureReplacementLogic(newState, "opponent", replacement)
+          const stateAfterOpponentReplacement = handleCreatureReplacementLogic(newState, "opponent", replacement)
           addToLog(`Opponent replaced with ${replacement.name}.`)
-        } else {
-          addToLog("Opponent has no creatures left! Player wins!")
-          newState = {
-            ...newState,
-            isGameOver: true,
-            winner: "player",
-            gamePhase: "gameOver",
-          }
+          return stateAfterOpponentReplacement
         }
       }
 
-      const playerLost =
-        (newState.player.activeCreature?.currentHp === 0 || !newState.player.activeCreature) &&
-        newState.player.benchCreatures.every((c) => c.currentHp === 0 || c.currentHp === undefined)
-      const opponentLost =
-        (newState.opponent.activeCreature?.currentHp === 0 || !newState.opponent.activeCreature) &&
-        newState.opponent.benchCreatures.every((c) => c.currentHp === 0 || c.currentHp === undefined)
-
-      if (playerLost && !newState.replacementPhaseForPlayer) {
-        addToLog("Player has no creatures left! Opponent wins!")
-        newState = {
-          ...newState,
-          isGameOver: true,
-          winner: "opponent",
-          gamePhase: "gameOver",
+      if (opponentLost) {
+        if (newState.isEndlessModeActive) {
+          // Defer to next state update cycle
+          setTimeout(() => handleEndlessNextBattleSetup(), 0)
+          return newState // Return current state, next setup will be handled
+        } else {
+          addToLog("Opponent defeated! Player wins!")
+          return { ...newState, isGameOver: true, winner: "player", gamePhase: "gameOver" }
         }
-      } else if (opponentLost && !newState.replacementPhaseForPlayer) {
-        addToLog("Opponent has no creatures left! Player wins!")
-        newState = {
-          ...newState,
-          isGameOver: true,
-          winner: "player",
-          gamePhase: "gameOver",
+      }
+
+      if (playerLost) {
+        if (newState.isEndlessModeActive) {
+          // Defer to next state update cycle
+          setTimeout(() => handleEndlessRunEnd(), 0)
+          return newState // Return current state, end run will be handled
+        } else {
+          addToLog("Player defeated! Opponent wins!")
+          return { ...newState, isGameOver: true, winner: "opponent", gamePhase: "gameOver" }
         }
       }
 
       return newState
     })
-  }, [addToLog, handleCreatureReplacementLogic])
+  }, [addToLog, handleCreatureReplacementLogic, handleEndlessNextBattleSetup, handleEndlessRunEnd])
 
   const endTurn = useCallback(
     (criticalHitOccurred = false) => {
@@ -755,7 +843,7 @@ export default function CardGameArena() {
   }, [gameState, addToLog, applyDamage, checkWinCondition, endTurn])
 
   const rollReplacementDice = useCallback(() => {
-    if (gameState.isRolling || !gameState.needsReplacementRoll || gameState.selectedGameMode?.id === "set-1") return
+    if (gameState.isRolling || !gameState.needsReplacementRoll) return
 
     setGameState((prev) => ({
       ...prev,
@@ -783,11 +871,11 @@ export default function CardGameArena() {
       addToLog(`Replacement die rolled: ${newValue}!`)
       endTurn() // End the turn after the replacement roll
     }, 1000)
-  }, [gameState.isRolling, gameState.needsReplacementRoll, gameState.selectedGameMode?.id, addToLog, endTurn])
+  }, [gameState.isRolling, gameState.needsReplacementRoll, addToLog, endTurn])
 
   const handleTagOut = useCallback(
     (playerType: "player" | "opponent", benchCreature: Creature) => {
-      if (gameState.selectedGameMode?.id === "set-1" || gameState.selectedGameMode?.id === "set-2") return // Tag out not allowed in Set 1 or Set 2
+      if (gameState.selectedGameMode?.id !== "set-3") return // Tag out only allowed in Set 3
       setGameState((prev) => {
         const currentPlayerState = playerType === "player" ? prev.player : prev.opponent
 
@@ -835,7 +923,7 @@ export default function CardGameArena() {
 
   const handleEvolution = useCallback(
     (playerType: "player" | "opponent") => {
-      if (gameState.selectedGameMode?.id === "set-1" || gameState.selectedGameMode?.id === "set-2") return // Evolution not allowed in Set 1 or Set 2
+      if (gameState.selectedGameMode?.id !== "set-3") return // Evolution only allowed in Set 3
       setGameState((prev) => {
         const currentPlayerState = playerType === "player" ? prev.player : prev.opponent
         const active = currentPlayerState.activeCreature
@@ -884,6 +972,30 @@ export default function CardGameArena() {
     },
     [gameState.selectedGameMode?.id, addToLog, endTurn],
   )
+
+  const handleModeSelection = useCallback(
+    (mode: GameMode) => {
+      setGameState((prev) => ({
+        ...prev,
+        selectedGameMode: mode,
+        gamePhase: "modeSelection", // Stay in modeSelection phase
+        selectionSubPhase: "chooseChallengeType", // Set new sub-phase
+      }))
+      addToLog(`You selected ${mode.name}. Choose your challenge.`)
+    },
+    [addToLog],
+  )
+
+  const handleChallengeSelection = (isEndless: boolean) => {
+    setGameState((prev) => ({
+      ...prev,
+      isEndlessModeActive: isEndless,
+      endlessWins: 0,
+      gamePhase: "instructions",
+      selectionSubPhase: null,
+    }))
+    addToLog(isEndless ? "Endless Challenge selected!" : "Standard Match selected.")
+  }
 
   useEffect(() => {
     console.log("AI useEffect triggered. Current state:", {
@@ -976,8 +1088,6 @@ export default function CardGameArena() {
     addToLog,
   ])
 
-  // Removed the old useEffect for skipNextTurnFor as its logic is now in endTurn
-
   const initiateGameSetup = useCallback(() => {
     setGameState((prev) => ({ ...prev, gamePhase: "modeSelection" }))
     addToLog("Select a game mode to begin!")
@@ -1010,9 +1120,7 @@ export default function CardGameArena() {
         const opponentCreatureIds: string[] = []
         let creaturesForOpponentSelection: Creature[] = []
 
-        if (selectedMode.id === "set-1") {
-          creaturesForOpponentSelection = getAllBasicCreatures()
-        } else if (selectedMode.id === "set-2") {
+        if (selectedMode.id === "set-2") {
           creaturesForOpponentSelection = getAllLevel3Creatures() // Get Level 3 for Set 2
         } else {
           // Set 3
@@ -1138,34 +1246,13 @@ export default function CardGameArena() {
     [addToLog],
   )
 
-  const handleModeSelection = useCallback(
-    (mode: GameMode) => {
-      setGameState((prev) => ({
-        ...prev,
-        selectedGameMode: mode,
-        gamePhase: "instructions", // All modes now go through instructions
-        playerSelectedCreatureIds: [],
-        selectionSubPhase: null,
-        creaturesToChooseFrom: null,
-      }))
-
-      addToLog(
-        `You selected ${mode.name}. Review the instructions before selecting your creature${mode.playerCreatureCount > 1 ? "s" : ""}.`,
-      )
-    },
-    [addToLog],
-  )
-
   const handleElementSelection = useCallback(
     (element: Element) => {
       console.log(`Selected element: ${element}`)
       let creaturesForSelection: Creature[] = []
       let nextSubPhase: GameState["selectionSubPhase"] = null
 
-      if (gameState.selectedGameMode?.id === "set-1") {
-        creaturesForSelection = getAllBasicCreatures().filter((c) => c.element === element)
-        nextSubPhase = "chooseSpecificCreatureForSet1"
-      } else if (gameState.selectedGameMode?.id === "set-2") {
+      if (gameState.selectedGameMode?.id === "set-2") {
         creaturesForSelection = getAllLevel3Creatures().filter((c) => c.element === element)
         nextSubPhase = "chooseSpecificCreatureForSet2"
       } else {
@@ -1192,23 +1279,6 @@ export default function CardGameArena() {
     [gameState.selectedGameMode, addToLog],
   )
 
-  const handleFinalSet1CreatureSelection = useCallback(
-    (creatureId: string) => {
-      if (gameState.selectedGameMode?.id !== "set-1") return
-
-      const selectedCreature = getCreatureById(creatureId)
-      if (!selectedCreature) {
-        addToLog("Error: Selected creature not found.")
-        return
-      }
-
-      // Go directly to coin toss since instructions were already shown
-      initializeGameRostersAndProceedToCoinToss([creatureId], gameState.selectedGameMode)
-      addToLog(`Selected ${selectedCreature.name} for Set 1.`)
-    },
-    [gameState.selectedGameMode, addToLog, initializeGameRostersAndProceedToCoinToss],
-  )
-
   const proceedFromInstructions = useCallback(() => {
     if (!gameState.selectedGameMode) {
       addToLog("Error: Game mode not selected.")
@@ -1218,7 +1288,7 @@ export default function CardGameArena() {
     setGameState((prev) => ({
       ...prev,
       gamePhase: "creatureSelection",
-      selectionSubPhase: prev.selectedGameMode?.id === "set-3" ? "chooseElement" : "chooseElement",
+      selectionSubPhase: "chooseElement",
     }))
 
     const creatureText = gameState.selectedGameMode.playerCreatureCount > 1 ? "creatures" : "creature"
@@ -1245,7 +1315,7 @@ export default function CardGameArena() {
   const handleCreatureSelection = useCallback(
     (creatureId: string) => {
       // This function is only for Set 3 (multi-creature selection)
-      if (gameState.selectedGameMode?.id === "set-1" || gameState.selectedGameMode?.id === "set-2") return
+      if (gameState.selectedGameMode?.id === "set-2") return
 
       setGameState((prev) => {
         const currentSelection = [...prev.playerSelectedCreatureIds]
@@ -1284,7 +1354,7 @@ export default function CardGameArena() {
   const handleRemoveSelectedCreature = useCallback(
     (indexToRemove: number) => {
       // This function is only for Set 3 (multi-creature selection)
-      if (gameState.selectedGameMode?.id === "set-1" || gameState.selectedGameMode?.id === "set-2") return
+      if (gameState.selectedGameMode?.id === "set-2") return
 
       setGameState((prev) => {
         const currentSelection = [...prev.playerSelectedCreatureIds]
@@ -1309,7 +1379,7 @@ export default function CardGameArena() {
 
   const handlePlayerReplacementSelection = useCallback(
     (creature: Creature) => {
-      if (gameState.selectedGameMode?.id === "set-1" || gameState.selectedGameMode?.id === "set-2") return // Replacement not allowed in Set 1 or Set 2
+      if (gameState.selectedGameMode?.id !== "set-3") return // Replacement only allowed in Set 3
       setGameState((prev) => {
         if (prev.replacementPhaseForPlayer !== "player") return prev
 
@@ -1328,7 +1398,7 @@ export default function CardGameArena() {
 
   const confirmRosterSelection = useCallback(() => {
     // This function is only for Set 3 (multi-creature selection)
-    if (gameState.selectedGameMode?.id === "set-1" || gameState.selectedGameMode?.id === "set-2") return
+    if (gameState.selectedGameMode?.id !== "set-3") return
 
     const maxCreatures = gameState.selectedGameMode?.playerCreatureCount || 3
     if (gameState.playerSelectedCreatureIds.length !== maxCreatures) {
@@ -1386,6 +1456,12 @@ export default function CardGameArena() {
 
   return (
     <>
+      {gameState.isEndlessModeActive && gameState.gamePhase === "inGame" && (
+        <div className="fixed top-4 left-4 z-50 flex items-center gap-2 bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-lg border border-white/20 shadow-lg">
+          <Trophy className="h-5 w-5 text-yellow-400" />
+          <span className="font-bold text-lg">{gameState.endlessWins}</span>
+        </div>
+      )}
       <div
         className={cn(
           "min-h-screen p-2 sm:p-4 relative flex items-center justify-center bg-black",
@@ -1514,22 +1590,72 @@ export default function CardGameArena() {
               <div className="flex flex-col items-center gap-4 mx-0 my-0 sm:py-6">
                 {gameState.gamePhase === "modeSelection" && (
                   <div className="flex flex-col items-center gap-4 w-full">
-                    <h4 className="text-white text-lg font-semibold text-center">Select a Game Mode:</h4>
-                    <div className="grid grid-cols-1 gap-4 w-full max-w-xs">
-                      {gameModes.map((mode) => (
+                    {gameState.selectionSubPhase === "chooseChallengeType" && gameState.selectedGameMode ? (
+                      <div className="flex flex-col items-center gap-4 w-full max-w-xs text-center">
+                        <h4 className="text-white text-2xl font-bold mb-2">{gameState.selectedGameMode.name}</h4>
                         <Button
-                          key={mode.id}
-                          onClick={() => handleModeSelection(mode)}
+                          onClick={() => handleChallengeSelection(false)}
                           variant="outline"
-                          className="flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
+                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
                         >
-                          <span className="text-xl font-bold mb-1 group-hover:text-white">{mode.name}</span>
+                          <span className="text-xl font-bold mb-1 group-hover:text-white">Standard Match</span>
                           <span className="text-sm text-black text-center group-hover:text-white">
-                            {mode.description}
+                            A single battle for glory.
                           </span>
                         </Button>
-                      ))}
-                    </div>
+                        <Button
+                          onClick={() => handleChallengeSelection(true)}
+                          variant="outline"
+                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
+                        >
+                          <span className="text-xl font-bold mb-1 group-hover:text-white">Endless Challenge</span>
+                          <span className="text-sm text-black text-center group-hover:text-white flex items-center gap-2">
+                            <Trophy className="h-4 w-4 text-yellow-500" />
+                            Record: {gameState.endlessTrophies[gameState.selectedGameMode.id] || 0} wins
+                          </span>
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            setGameState((prev) => ({
+                              ...prev,
+                              selectionSubPhase: null,
+                              selectedGameMode: null,
+                            }))
+                          }
+                          variant="ghost"
+                          className="text-white/70 hover:text-white mt-2"
+                        >
+                          Back to Mode Selection
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <h4 className="text-white text-lg font-semibold text-center">Select a Game Mode:</h4>
+                        <div className="grid grid-cols-1 gap-4 w-full max-w-xs">
+                          {gameModes.map((mode) => (
+                            <Button
+                              key={mode.id}
+                              onClick={() => handleModeSelection(mode)}
+                              variant="outline"
+                              className="flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
+                            >
+                              <span className="text-xl font-bold mb-1 group-hover:text-white">{mode.name}</span>
+                              <span className="text-sm text-black text-center group-hover:text-white">
+                                {mode.description}
+                              </span>
+                            </Button>
+                          ))}
+                        </div>
+                        <Button
+                          onClick={openAchievements}
+                          variant="ghost"
+                          className="text-white/70 hover:text-white mt-4 flex items-center gap-2"
+                        >
+                          <Trophy className="h-5 w-5 text-yellow-400" />
+                          View Achievements
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -1540,11 +1666,9 @@ export default function CardGameArena() {
                       {gameState.selectedGameMode?.playerCreatureCount || 3})
                     </h4>
                     <p className="text-white/80 text-sm text-center">
-                      {gameState.selectedGameMode?.id === "set-1"
-                        ? "Choose one elemental creature to lead your team into the 1v1 arena. Let the battle for balance begin."
-                        : gameState.selectedGameMode?.id === "set-2"
-                          ? "Select one elemental type to summon your Stage 3 Elementara for a 1v1 clash of power and spirit."
-                          : "The element of your first chosen creature will become your Active Element in battle. Choose wisely."}
+                      {gameState.selectedGameMode?.id === "set-2"
+                        ? "Select one elemental type to summon your Stage 3 Elementara for a 1v1 clash of power and spirit."
+                        : "The element of your first chosen creature will become your Active Element in battle. Choose wisely."}
                     </p>
 
                     {/* Your Roster Preview (only for Set 3 mode) */}
@@ -1618,48 +1742,6 @@ export default function CardGameArena() {
                         </div>
                       </div>
                     )}
-
-                    {/* Only show specific creature selection if Set 1 and in chooseSpecificCreatureForSet1 phase */}
-                    {gameState.selectedGameMode?.id === "set-1" &&
-                      gameState.selectionSubPhase === "chooseSpecificCreatureForSet1" &&
-                      gameState.creaturesToChooseFrom && (
-                        <div className="flex flex-col items-center gap-4 mt-4">
-                          <h5 className="text-white text-md font-semibold">
-                            Choose your {gameState.currentElementSelection} Creature:
-                          </h5>
-                          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                            {gameState.creaturesToChooseFrom.map((creature) => (
-                              <CreatureCard
-                                key={creature.id}
-                                creature={creature}
-                                onClick={() => {
-                                  if (gameState.gamePhase === "creatureSelection") {
-                                    handleFinalSet1CreatureSelection(creature.id)
-                                  } else {
-                                    handleCardDetailView(creature)
-                                  }
-                                }}
-                                gameMode={gameState.selectedGameMode?.id}
-                                className="cursor-pointer"
-                              />
-                            ))}
-                          </div>
-                          <Button
-                            onClick={() =>
-                              setGameState((prev) => ({
-                                ...prev,
-                                selectionSubPhase: "chooseElement",
-                                currentElementSelection: null,
-                                creaturesToChooseFrom: null,
-                              }))
-                            }
-                            variant="outline"
-                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-white"
-                          >
-                            Back to Element Selection
-                          </Button>
-                        </div>
-                      )}
 
                     {/* Only show specific creature selection if Set 2 and in chooseSpecificCreatureForSet2 phase */}
                     {gameState.selectedGameMode?.id === "set-2" &&
@@ -1772,32 +1854,12 @@ export default function CardGameArena() {
                 {gameState.gamePhase === "instructions" && (
                   <div className="flex flex-col items-center gap-6 w-full max-w-2xl mx-auto">
                     <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-4">
-                      {gameState.selectedGameMode?.id === "set-1"
-                        ? "Duel of Spirits"
-                        : gameState.selectedGameMode?.id === "set-2"
-                          ? "Full Power Duel"
-                          : "Evolution Clash"}
+                      {gameState.selectedGameMode?.id === "set-2" ? "Full Power Duel" : "Evolution Clash"}
                     </h2>
 
                     <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6 sm:p-8 space-y-4">
                       <div className="text-white text-lg sm:text-xl leading-relaxed space-y-4 text-left">
-                        {gameState.selectedGameMode?.id === "set-1" ? (
-                          <>
-                            <p className="text-xl sm:text-2xl font-semibold mb-4">
-                              Choose one Elementara. Roll your die. Battle begins.
-                            </p>
-
-                            <p className="text-lg sm:text-xl">🎲 Take turns rolling 1 die.</p>
-
-                            <p className="text-lg sm:text-xl">⚔️ Deal damage equal to your roll.</p>
-
-                            <p className="text-lg sm:text-xl">🏆 First to drop the opponent's HP to 0 wins.</p>
-
-                            <p className="text-lg sm:text-xl font-semibold mt-6">
-                              💪 No evolution. No switching. Just raw elemental power.
-                            </p>
-                          </>
-                        ) : gameState.selectedGameMode?.id === "set-2" ? (
+                        {gameState.selectedGameMode?.id === "set-2" ? (
                           <>
                             <p className="text-xl sm:text-2xl font-semibold mb-4">
                               Choose one Stage 3 Elementara. Battle at peak power.
@@ -1843,11 +1905,7 @@ export default function CardGameArena() {
                       onClick={proceedFromInstructions}
                       className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105 mt-4"
                     >
-                      {gameState.selectedGameMode?.id === "set-1"
-                        ? "Begin the Duel"
-                        : gameState.selectedGameMode?.id === "set-2"
-                          ? "Begin Full Power Battle"
-                          : "Begin Evolution Clash"}
+                      {gameState.selectedGameMode?.id === "set-2" ? "Begin Full Power Battle" : "Begin Evolution Clash"}
                     </Button>
                   </div>
                 )}
@@ -1917,6 +1975,42 @@ export default function CardGameArena() {
                           )}
                         </div>
                       </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    {gameState.turn === "player" && (
+                      <div className="flex flex-col gap-3 mt-6 w-full max-w-xs">
+                        <Button
+                          onClick={rollDice}
+                          disabled={gameState.hasRolledThisTurn || gameState.isRolling}
+                          className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-6 py-3 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+                        >
+                          {gameState.isRolling ? "Rolling..." : "Roll Dice"}
+                        </Button>
+
+                        {gameState.selectedGameMode?.id === "set-3" && (
+                          <>
+                            <Button
+                              onClick={() => handleEvolution("player")}
+                              disabled={!canPlayerEvolve || gameState.hasRolledThisTurn || gameState.isRolling}
+                              className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-6 py-3 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+                            >
+                              Evolve ({playerActiveCreature?.turnsSurvived || 0}/
+                              {gameState.selectedGameMode?.evolutionTurnsRequired || 3})
+                            </Button>
+                            <Button
+                              onClick={() => setGameState((prev) => ({ ...prev, isTaggingOut: true }))}
+                              disabled={!canPlayerTagOut || gameState.hasRolledThisTurn || gameState.isRolling}
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white text-lg px-6 py-3 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+                            >
+                              Tag Out
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {gameState.turn === "opponent" && (
+                      <p className="text-white text-lg font-semibold mt-6 animate-pulse">Opponent's Turn...</p>
                     )}
                   </div>
                 )}
@@ -2021,136 +2115,44 @@ export default function CardGameArena() {
           >
             <h2
               className={cn(
-                "text-8xl font-extrabold text-white text-center drop-shadow-lg",
+                "text-6xl sm:text-8xl font-extrabold text-white text-center drop-shadow-lg",
                 gameState.winner === "player" ? "text-green-600" : "text-red-600",
               )}
             >
               {gameState.winner === "player" ? "You Win!" : "You Lose!"}
             </h2>
-
-            <Button
-              onClick={restartGame}
-              size="lg"
-              className={cn(
-                "mt-8",
-                "bg-green-600 hover:bg-green-700",
-                "text-white font-semibold shadow-2xl border-2 border-green-500/50",
-                "transition-all duration-200 hover:scale-105 hover:shadow-green-500/25",
-                "text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3",
-                "z-[101]",
-              )}
-            >
-              Restart
-            </Button>
-          </div>
-        )}
-
-        {gameState.gamePhase === "inGame" && !gameState.replacementPhaseForPlayer && (
-          <div className="fixed bottom-0 left-0 right-0 p-4 z-50">
-            <div className="max-w-6xl mx-auto">
-              <div className="bg-white/10 backdrop-blur-md rounded-t-lg border border-white/20 p-4">
-                {gameState.selectedGameMode?.id === "set-1" || gameState.selectedGameMode?.id === "set-2" ? ( // Set 1 and Set 2 only have roll button
-                  <div className="flex justify-center">
-                    {gameState.needsReplacementRoll ? (
-                      <Button
-                        onClick={rollReplacementDice}
-                        disabled={gameState.isRolling}
-                        variant="outline"
-                        className="bg-white/90 hover:bg-white text-black border-white/50 backdrop-blur-sm font-medium h-12 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed px-8"
-                      >
-                        <span className="text-lg text-black">🎲</span>
-                        <span>Roll Die</span>
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={rollDice}
-                        disabled={
-                          gameState.isRolling ||
-                          gameState.hasRolledThisTurn ||
-                          gameState.isTaggingOut ||
-                          gameState.turn !== "player"
-                        }
-                        variant="outline"
-                        className="bg-white/90 hover:bg-white text-black border-white/50 backdrop-blur-sm font-medium h-12 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed px-8"
-                      >
-                        <span className="text-lg text-black">🎲</span>
-                        <span>Roll</span>
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  // For Set 3, show all three buttons in a grid
-                  <div className="grid grid-cols-3 gap-3">
-                    {/* Tag Out Button */}
-                    <Button
-                      onClick={() => {
-                        setGameState((prev) => ({
-                          ...prev,
-                          isTaggingOut: !prev.isTaggingOut,
-                        }))
-                        if (!gameState.isTaggingOut) {
-                          addToLog("Click a benched creature to tag out with it.")
-                        } else {
-                          addToLog("Tag cancelled.")
-                        }
-                      }}
-                      disabled={!canPlayerTagOut || gameState.hasRolledThisTurn || gameState.turn !== "player"}
-                      variant="outline"
-                      className={cn(
-                        "bg-white/90 hover:bg-white text-black border-white/50 backdrop-blur-sm font-medium h-12 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed",
-                        gameState.isTaggingOut && "bg-red-500/90 hover:bg-red-500 text-white border-red-400",
-                      )}
-                    >
-                      <span className="text-lg text-black">🔄</span>
-                      <span className="hidden sm:inline">{gameState.isTaggingOut ? "Cancel" : "Tag"}</span>
-                    </Button>
-
-                    {/* Roll Dice Button */}
-                    {gameState.needsReplacementRoll ? (
-                      <Button
-                        onClick={rollReplacementDice}
-                        disabled={gameState.isRolling}
-                        variant="outline"
-                        className="bg-white/90 hover:bg-white text-black border-white/50 backdrop-blur-sm font-medium h-12 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="text-lg text-black">🎲</span>
-                        <span className="hidden sm:inline">Roll Die</span>
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={rollDice}
-                        disabled={
-                          gameState.isRolling ||
-                          gameState.hasRolledThisTurn ||
-                          gameState.isTaggingOut ||
-                          gameState.turn !== "player"
-                        }
-                        variant="outline"
-                        className="bg-white/90 hover:bg-white text-black border-white/50 backdrop-blur-sm font-medium h-12 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="text-lg text-black">🎲</span>
-                        <span className="hidden sm:inline">Roll</span>
-                      </Button>
-                    )}
-
-                    {/* Evolution Button */}
-                    <Button
-                      onClick={() => handleEvolution("player")}
-                      disabled={
-                        !canPlayerEvolve ||
-                        gameState.hasRolledThisTurn ||
-                        gameState.isTaggingOut ||
-                        gameState.turn !== "player"
-                      }
-                      variant="outline"
-                      className="bg-white/90 hover:bg-white text-black border-white/50 backdrop-blur-sm font-medium h-12 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span className="text-lg text-black">⚡</span>
-                      <span className="hidden sm:inline">Evolve</span>
-                    </Button>
-                  </div>
+            {gameState.isEndlessModeActive && gameState.winner === "opponent" && (
+              <p className="text-2xl sm:text-3xl text-white mt-4">
+                Final Score: <span className="font-bold text-yellow-400">{gameState.endlessWins}</span> wins
+              </p>
+            )}
+            <div className="flex gap-4 mt-8">
+              <Button
+                onClick={handleRestartCurrentMode}
+                size="lg"
+                className={cn(
+                  "bg-green-600 hover:bg-green-700",
+                  "text-white font-semibold shadow-2xl border-2 border-green-500/50",
+                  "transition-all duration-200 hover:scale-105 hover:shadow-green-500/25",
+                  "text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3",
+                  "z-[101]",
                 )}
-              </div>
+              >
+                Restart
+              </Button>
+              <Button
+                onClick={handleBackToMenu}
+                size="lg"
+                className={cn(
+                  "bg-green-600 hover:bg-green-700",
+                  "text-white font-semibold shadow-2xl border-2 border-green-500/50",
+                  "transition-all duration-200 hover:scale-105 hover:shadow-green-500/25",
+                  "text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3",
+                  "z-[101]",
+                )}
+              >
+                Back to Menu
+              </Button>
             </div>
           </div>
         )}
@@ -2295,6 +2297,58 @@ export default function CardGameArena() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Achievements Modal */}
+        {gameState.isAchievementsOpen && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in-0"
+            onClick={closeAchievements}
+          >
+            <div
+              className="relative w-full max-w-md bg-gray-900/70 border border-white/20 rounded-xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={closeAchievements}
+                className="absolute -top-3 -right-3 z-10 w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg border-2 border-white/50"
+                title="Close"
+              >
+                <span className="text-xl font-bold">✕</span>
+              </button>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-6 flex items-center justify-center gap-3">
+                <Trophy className="h-8 w-8 text-yellow-400" />
+                Achievements
+              </h2>
+              <p className="text-center text-white/80 mb-8">Your best scores in Endless Challenge mode.</p>
+              <div className="mt-4">
+                <table className="w-full text-white">
+                  <thead className="sr-only">
+                    <tr>
+                      <th className="text-left p-2">Game Mode</th>
+                      <th className="text-right p-2">Record</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gameModes.map((mode) => (
+                      <tr key={mode.id} className="border-b border-white/10 last:border-b-0">
+                        <td className="py-3 sm:py-4 text-base sm:text-lg font-semibold">{mode.name}</td>
+                        <td className="py-3 sm:py-4">
+                          <div className="flex items-center justify-end gap-2 sm:gap-3">
+                            <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />
+                            <span className="font-bold text-xl sm:text-2xl w-10 text-center">
+                              {gameState.endlessTrophies[mode.id] || 0}
+                            </span>
+                            <span className="text-white/70 text-sm sm:text-base">wins</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

@@ -1,11 +1,11 @@
 "use client"
 
-import React from "react"
+import type React from "react"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import type { Creature, Element } from "@/lib/creatures"
-import { Info, Flame, Droplets, Gem, Wind } from "lucide-react"
+import { Info } from "lucide-react"
 import { useState } from "react"
 
 interface CreatureCardProps {
@@ -21,7 +21,7 @@ interface CreatureCardProps {
   isDefending?: boolean
   isDamaged?: boolean
   isCorrupted?: boolean
-  gameMode?: string // Add gameMode prop
+  gameMode?: string
 }
 
 const elementBorderColors: Record<Element, string> = {
@@ -31,7 +31,6 @@ const elementBorderColors: Record<Element, string> = {
   Air: "border-purple-500",
 }
 
-// Fallback background colors for loading states
 const elementFallbackColors: Record<Element, string> = {
   Fire: "bg-gradient-to-br from-red-500 to-orange-600",
   Water: "bg-gradient-to-br from-blue-500 to-cyan-600",
@@ -39,7 +38,6 @@ const elementFallbackColors: Record<Element, string> = {
   Air: "bg-gradient-to-br from-purple-500 to-indigo-600",
 }
 
-// Updated background images using the latest provided images
 const elementBackgroundImages: Record<Element, string> = {
   Fire: "bg-[url('/images/backgrounds/fire-updated.jpeg')] bg-cover bg-center bg-no-repeat",
   Water: "bg-[url('/images/backgrounds/water-updated.jpeg')] bg-cover bg-center bg-no-repeat",
@@ -68,18 +66,47 @@ const elementDetailBackgroundImages: Record<Element, string> = {
   Air: "/images/backgrounds/air-updated.jpeg",
 }
 
-const elementIcons: Record<Element, React.ElementType> = {
-  Fire: Flame,
-  Water: Droplets,
-  Earth: Gem,
-  Air: Wind,
+const elementEmojis: Record<Element, string> = {
+  Fire: "🔥",
+  Water: "💧",
+  Earth: "🌱",
+  Air: "🌬️",
 }
 
-const elementIconColors: Record<Element, string> = {
-  Fire: "text-red-400",
-  Water: "text-blue-400",
-  Earth: "text-emerald-400",
-  Air: "text-slate-300",
+const creatureImages: Record<string, string> = {
+  apoymortis: "/images/apoymortis.jpeg",
+  magdanok: "/images/magdanok.jpeg",
+  silabrix: "/images/silabrix.jpeg",
+  sigael: "/images/sigael.jpeg",
+  alkaulon: "/images/alkaulon.jpeg",
+  infernuko: "/images/infernuko.jpeg",
+  asonis: "/images/asonis.jpeg",
+  liyabon: "/images/liyabon.jpeg",
+  drakalayo: "/images/drakalayo.jpeg",
+  sireniya: "/images/sireniya.jpeg",
+  niebarko: "/images/niebarko.jpeg",
+  lakanis: "/images/lakanis.jpeg",
+  tundragan: "/images/tundragan.jpeg",
+  tayodora: "/images/tayodora.jpeg",
+  yelogon: "/images/yelogon.jpeg",
+  agwatara: "/images/agwatara.jpeg",
+  ulanik: "/images/ulanik.jpeg",
+  mardagat: "/images/mardagat.jpeg",
+  // Earth creatures
+  talahus: "/images/talahus.jpeg",
+  dunobrak: "/images/dunobrak.jpeg",
+  guwardanox: "/images/guwardanox.jpeg",
+  grobayan: "/images/grobayan.jpeg",
+  putrani: "/images/putrani.jpeg",
+  barkhilan: "/images/barkhilan.jpeg",
+  pamantok: "/images/pamantok.jpeg",
+  anitubi: "/images/anitubi.jpeg",
+  silvaran: "/images/silvaran.jpeg",
+  // Add other creature images here as they become available
+  zephyltik: "/images/zephyltik.png",
+  bagynox: "/images/bagynox.png",
+  haliyas: "/images/haliyas.png",
+  layawing: "/images/layawing.png",
 }
 
 export const CreatureCard = ({
@@ -132,7 +159,7 @@ export const CreatureCard = ({
           // Base responsive sizing - scales smoothly across all breakpoints
           "w-16 h-20 xs:w-18 xs:h-24 sm:w-20 sm:h-28 md:w-24 md:h-32 lg:w-28 lg:h-36 xl:w-32 xl:h-40",
           "flex items-center justify-center rounded-lg shadow-lg border-2",
-          "bg-[url('/images/card-back-new.jpeg')] bg-cover bg-center bg-no-repeat",
+          "bg-[url('/images/card-back.png')] bg-cover bg-center bg-no-repeat",
           "transform transition-all duration-200 hover:scale-105 cursor-pointer",
           "aspect-[4/5]",
           // Defending player receiving damage - red border (only when shaking)
@@ -161,12 +188,10 @@ export const CreatureCard = ({
           // Responsive sizing with consistent aspect ratio
           "w-16 xs:w-18 sm:w-20 md:w-24 lg:w-28 xl:w-32", // Widths remain, heights derived from aspect ratio
           "aspect-[16/25]", // Increased height by 25% (4 / (5 * 1.25) = 16/25)
-          "rounded-lg shadow-lg border-2 overflow-visible relative cursor-pointer",
+          "rounded-lg shadow-lg border-2 overflow-hidden relative cursor-pointer",
           "flex flex-col",
           // Fallback background color (loads first)
           elementFallbackColors[creature.element],
-          // Background image (loads over fallback)
-          elementBackgroundImages[creature.element],
           // Element border color
           elementBorderColors[creature.element],
           // Defending player receiving damage - red border (only when shaking)
@@ -258,7 +283,7 @@ export const CreatureCard = ({
               className={cn(
                 "h-full transition-all duration-300 rounded-full",
                 hpPercentage > 60 ? "bg-green-500" : hpPercentage > 30 ? "bg-yellow-500" : "bg-red-500",
-                "shadow-sm", // Add subtle shadow to HP bar
+                "shadow-sm",
               )}
               style={{ width: `${hpPercentage}%` }}
             />
@@ -281,8 +306,16 @@ export const CreatureCard = ({
         </div>
 
         {/* Card Art - Main area */}
-        <div className="flex-1 bg-gradient-to-b from-white/10 to-transparent relative z-[2]">
-          {/* Empty space for card art or other content */}
+        <div className="flex-1 relative z-[2] flex items-center justify-center overflow-hidden rounded-b-lg">
+          {creatureImages[creature.id] ? (
+            <img
+              src={creatureImages[creature.id] || "/placeholder.svg"}
+              alt={creature.name}
+              className="absolute inset-0 w-full h-full object-cover object-center"
+            />
+          ) : (
+            <div className={cn("w-full h-full", elementBackgroundImages[creature.element])} />
+          )}
         </div>
 
         {/* Knocked Out Overlay */}
@@ -319,6 +352,15 @@ export const CreatureCard = ({
                 className="absolute inset-0 w-full h-full object-cover"
               />
 
+              {/* Creature Image in Detail View */}
+              {creatureImages[creature.id] && (
+                <img
+                  src={creatureImages[creature.id] || "/placeholder.svg"}
+                  alt={creature.name}
+                  className="absolute top-0 left-0 w-full h-full object-contain object-center z-0"
+                />
+              )}
+
               {/* Gradient Overlay for text readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
 
@@ -349,9 +391,7 @@ export const CreatureCard = ({
                   <div className="flex items-center gap-x-2">
                     <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">RES</p>
                     {creature.resistance ? (
-                      React.createElement(elementIcons[creature.resistance], {
-                        className: cn("w-6 h-6", elementIconColors[creature.resistance]),
-                      })
+                      <span className="text-2xl sm:text-3xl">{elementEmojis[creature.resistance]}</span>
                     ) : (
                       <span className="text-xl font-bold">-</span>
                     )}
@@ -361,9 +401,7 @@ export const CreatureCard = ({
                   <div className="flex items-center gap-x-2">
                     <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">WEAK</p>
                     {creature.weakness ? (
-                      React.createElement(elementIcons[creature.weakness], {
-                        className: cn("w-6 h-6", elementIconColors[creature.weakness]),
-                      })
+                      <span className="text-2xl sm:text-3xl">{elementEmojis[creature.weakness]}</span>
                     ) : (
                       <span className="text-xl font-bold">-</span>
                     )}
