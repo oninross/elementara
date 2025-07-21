@@ -4,9 +4,22 @@ import "./globals.css"
 import DisableSW from "@/components/disable-sw"
 
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
+  title: "Elementara Card Game",
+  description: "A digital card game experience.",
   generator: "v0.dev",
+  manifest: "/manifest.json", // Link to your web app manifest
+  themeColor: "#000000", // Define the theme color for the browser UI
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Elementara",
+    startupImage: [
+      "/icons/apple-touch-icon.png", // Example for startup image
+    ],
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png", // Apple touch icon
+  },
 }
 
 import { Inter } from "next/font/google"

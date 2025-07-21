@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import Image from "next/image"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -74,6 +75,7 @@ const elementEmojis: Record<Element, string> = {
 }
 
 const creatureImages: Record<string, string> = {
+  // Fire creatures
   apoymortis: "/images/apoymortis.jpeg",
   magdanok: "/images/magdanok.jpeg",
   silabrix: "/images/silabrix.jpeg",
@@ -83,6 +85,8 @@ const creatureImages: Record<string, string> = {
   asonis: "/images/asonis.jpeg",
   liyabon: "/images/liyabon.jpeg",
   drakalayo: "/images/drakalayo.jpeg",
+
+  // Water creatures
   sireniya: "/images/sireniya.jpeg",
   niebarko: "/images/niebarko.jpeg",
   lakanis: "/images/lakanis.jpeg",
@@ -92,6 +96,7 @@ const creatureImages: Record<string, string> = {
   agwatara: "/images/agwatara.jpeg",
   ulanik: "/images/ulanik.jpeg",
   mardagat: "/images/mardagat.jpeg",
+
   // Earth creatures
   talahus: "/images/talahus.jpeg",
   dunobrak: "/images/dunobrak.jpeg",
@@ -102,11 +107,17 @@ const creatureImages: Record<string, string> = {
   pamantok: "/images/pamantok.jpeg",
   anitubi: "/images/anitubi.jpeg",
   silvaran: "/images/silvaran.jpeg",
-  // Add other creature images here as they become available
-  zephyltik: "/images/zephyltik.png",
-  bagynox: "/images/bagynox.png",
-  haliyas: "/images/haliyas.png",
-  layawing: "/images/layawing.png",
+
+  // Air creatures
+  zephyltik: "/images/zephyltik.jpeg",
+  bagynox: "/images/bagynox.jpeg",
+  haliyas: "/images/haliyas.jpeg",
+  layawing: "/images/layawing.jpeg",
+  alingaw: "/images/alingaw.jpeg",
+  kaelykat: "/images/kaelykat.jpeg",
+  hangguran: "/images/hangguran.jpeg",
+  himpayan: "/images/himpayan.jpeg",
+  uludronis: "/images/uludronis.jpeg",
 }
 
 export const CreatureCard = ({
@@ -158,7 +169,7 @@ export const CreatureCard = ({
         className={cn(
           // Base responsive sizing - scales smoothly across all breakpoints
           "w-16 h-20 xs:w-18 xs:h-24 sm:w-20 sm:h-28 md:w-24 md:h-32 lg:w-28 lg:h-36 xl:w-32 xl:h-40",
-          "flex items-center justify-center rounded-lg shadow-lg border-2",
+          "flex items-center justify-center rounded shadow-lg border-2",
           "bg-[url('/images/card-back.png')] bg-cover bg-center bg-no-repeat",
           "transform transition-all duration-200 hover:scale-105 cursor-pointer",
           "aspect-[4/5]",
@@ -188,7 +199,7 @@ export const CreatureCard = ({
           // Responsive sizing with consistent aspect ratio
           "w-16 xs:w-18 sm:w-20 md:w-24 lg:w-28 xl:w-32", // Widths remain, heights derived from aspect ratio
           "aspect-[16/25]", // Increased height by 25% (4 / (5 * 1.25) = 16/25)
-          "rounded-lg shadow-lg border-2 overflow-hidden relative cursor-pointer",
+          "rounded shadow-lg border-2 overflow-hidden relative cursor-pointer",
           "flex flex-col",
           // Fallback background color (loads first)
           elementFallbackColors[creature.element],
@@ -222,17 +233,17 @@ export const CreatureCard = ({
         onDoubleClick={handleDoubleClick}
       >
         {/* Background overlay for better text readability on small cards */}
-        <div className="absolute inset-0 bg-black/40 rounded-lg z-[1]" />
+        <div className="absolute inset-0 bg-black/40 rounded z-[1]" />
 
         {/* Purple shimmer overlay for corrupted creatures - only in Evolution Mode */}
         {showCorruptionEffects && (
           <>
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-transparent to-purple-600/20 rounded-lg z-[2] animate-pulse"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-transparent to-purple-600/20 rounded z-[2] animate-pulse"></div>
             <div
-              className="absolute inset-0 bg-gradient-to-tl from-purple-400/15 via-purple-500/10 to-transparent rounded-lg z-[2] animate-pulse"
+              className="absolute inset-0 bg-gradient-to-tl from-purple-400/15 via-purple-500/10 to-transparent rounded z-[2] animate-pulse"
               style={{ animationDelay: "0.5s" }}
             ></div>
-            <div className="absolute top-0 left-0 w-full h-full rounded-lg z-[2]">
+            <div className="absolute top-0 left-0 w-full h-full rounded z-[2]">
               <div className="absolute top-1 right-1 text-purple-400 text-xs animate-pulse">🌀</div>
               <div
                 className="absolute bottom-1 left-1 text-purple-400 text-xs animate-pulse"
@@ -244,25 +255,40 @@ export const CreatureCard = ({
           </>
         )}
 
-        {/* Info Icon - Positioned at bottom-right corner */}
+        {/* Info Icon - Positioned at top-right corner */}
         <button
           onClick={handleInfoClick}
-          className="absolute bottom-1 right-1 z-10 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
+          className="absolute top-1 right-1 z-10 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
           title="View card details"
         >
           <Info className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3" />
         </button>
 
+        {/* Card Art - Main area - fills entire card */}
+        <div className="absolute inset-0 z-[2] flex items-center justify-center overflow-hidden rounded">
+          {creatureImages[creature.id] ? (
+            <Image
+              src={creatureImages[creature.id] || "/placeholder.svg"}
+              alt={creature.name}
+              fill // Use fill to make it cover the parent div
+              style={{ objectFit: "cover", objectPosition: "center" }} // Equivalent to object-cover object-center
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw" // Responsive sizes for better optimization
+            />
+          ) : (
+            <div className={cn("w-full h-full", elementBackgroundImages[creature.element])} />
+          )}
+        </div>
+
         {/* Card Header - Name and Level aligned with same font size */}
         <div
           className={cn(
-            "p-1 sm:p-1.5 md:p-2 relative z-[6] mb-1 sm:mb-2",
+            "absolute bottom-6 left-2 right-2 z-[6]",
             elementTextColors[creature.element],
             elementTextShadows[creature.element],
             "font-extrabold",
           )}
         >
-          <div className="flex justify-between items-baseline w-full">
+          <div className="flex justify-between items-baseline w-full px-0">
             <div className="flex-1 min-w-0 mr-2">
               <div className="text-[9px] sm:text-[10px] md:text-xs font-extrabold truncate leading-tight tracking-wide">
                 {creature.name.toUpperCase()}
@@ -277,7 +303,7 @@ export const CreatureCard = ({
         </div>
 
         {/* HP Bar */}
-        <div className="px-1.5 sm:px-2 pb-1 relative z-[6]">
+        <div className="absolute bottom-4 left-2 right-2 z-[6]">
           <div className="h-1 sm:h-1.5 md:h-2 bg-black/70 rounded-full border border-black/50">
             <div
               className={cn(
@@ -290,10 +316,10 @@ export const CreatureCard = ({
           </div>
         </div>
 
-        {/* HP Points Display - Directly after HP bar, no background */}
+        {/* HP Points Display - With black frosted background */}
         <div
           className={cn(
-            "px-1.5 sm:px-2 pb-2 relative z-[6]",
+            "absolute bottom-0 left-2 right-2 z-[6]",
             elementTextColors[creature.element],
             elementTextShadows[creature.element],
           )}
@@ -305,22 +331,9 @@ export const CreatureCard = ({
           </div>
         </div>
 
-        {/* Card Art - Main area */}
-        <div className="flex-1 relative z-[2] flex items-center justify-center overflow-hidden rounded-b-lg">
-          {creatureImages[creature.id] ? (
-            <img
-              src={creatureImages[creature.id] || "/placeholder.svg"}
-              alt={creature.name}
-              className="absolute inset-0 w-full h-full object-cover object-center"
-            />
-          ) : (
-            <div className={cn("w-full h-full", elementBackgroundImages[creature.element])} />
-          )}
-        </div>
-
         {/* Knocked Out Overlay */}
         {creature.currentHp <= 0 && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-[7] rounded-lg">
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-[7] rounded">
             <span className="text-red-500 font-bold text-lg sm:text-xl md:text-2xl drop-shadow-lg">KO</span>
           </div>
         )}
@@ -344,25 +357,27 @@ export const CreatureCard = ({
             </button>
 
             {/* Main card container */}
-            <div className="relative aspect-[5/7] w-full rounded-xl shadow-2xl overflow-hidden border border-gray-700">
+            <div className="relative aspect-[5/7] w-full rounded shadow-2xl overflow-hidden border border-gray-700">
               {/* Background Image */}
-              <img
+              {/* <img
                 src={elementDetailBackgroundImages[creature.element] || "/placeholder.svg"}
                 alt={`${creature.element} background`}
                 className="absolute inset-0 w-full h-full object-cover"
-              />
+              /> */}
 
               {/* Creature Image in Detail View */}
               {creatureImages[creature.id] && (
-                <img
+                <Image
                   src={creatureImages[creature.id] || "/placeholder.svg"}
                   alt={creature.name}
-                  className="absolute top-0 left-0 w-full h-full object-contain object-center z-0"
+                  fill // Use fill to make it cover the parent div
+                  style={{ objectFit: "cover", objectPosition: "center" }} // Equivalent to object-cover object-center
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw" // Responsive sizes for better optimization
                 />
               )}
 
               {/* Gradient Overlay for text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
 
               {/* Content */}
               <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-5 text-white">

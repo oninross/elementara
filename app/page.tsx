@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -172,6 +172,11 @@ export default function CardGameArena() {
     }
   })
 
+  // Move useRef declarations inside the component
+  const rollTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const damageTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const endTurnTimerRef = useRef<NodeJS.Timeout | null>(null)
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const trophies: Record<string, number> = {}
@@ -314,7 +319,6 @@ export default function CardGameArena() {
         player: playerType === "player" ? updatedPlayerState : prevState.player,
         opponent: playerType === "opponent" ? updatedPlayerState : prevState.opponent,
         replacementPhaseForPlayer: null,
-        hasRolledThisTurn: true,
       }
     },
     [],
@@ -591,18 +595,22 @@ export default function CardGameArena() {
         let newSkipNextTurnFor = prev.skipNextTurnFor
 
         // If a critical hit just occurred, the *current* player (attacker) will skip their *next* turn.
+        // This means we set the flag for them to skip when it becomes their turn again.
         if (criticalHitOccurred) {
           newSkipNextTurnFor = currentTurnPlayerType
+          addToLog(
+            `${currentTurnPlayerType === "player" ? "Player" : "Opponent"} will skip their next turn due to Critical Hit!`,
+          )
         }
 
         // Check if the *next* player (who is about to start their turn) is supposed to skip
         if (newSkipNextTurnFor === nextTurn) {
-          addToLog(`${nextTurn === "player" ? "Player" : "Opponent"} skips their turn due to Critical Hit!`)
+          addToLog(`${nextTurn === "player" ? "Player" : "Opponent"} skips their turn!`)
           newSkipNextTurnFor = null // Clear the flag after it's acted upon
           nextTurn = nextTurn === "player" ? "opponent" : "player" // Skip this player, move to the next
         }
 
-        addToLog(`Turn ended. It's now ${nextTurn === "player" ? "your" : "opponent's"} turn.`) // Log after potential skip
+        addToLog(`Turn ended. It's now ${nextTurn === "player" ? "your" : "opponent's"} turn.`)
 
         return {
           ...prev,
@@ -716,7 +724,12 @@ export default function CardGameArena() {
     }))
     addToLog(`${gameState.turn === "player" ? "Player" : "Opponent"} rolls the dice...`)
 
-    setTimeout(() => {
+    // Clear any previous timers to prevent conflicts from previous rolls
+    if (rollTimerRef.current) clearTimeout(rollTimerRef.current)
+    if (damageTimerRef.current) clearTimeout(damageTimerRef.current)
+    if (endTurnTimerRef.current) clearTimeout(endTurnTimerRef.current)
+
+    rollTimerRef.current = setTimeout(() => {
       const newValue = Math.floor(Math.random() * 6) + 1
 
       // Check for corruption trigger
@@ -773,7 +786,7 @@ export default function CardGameArena() {
         opponentActiveIsDefending: prev.turn === "player",
       }))
 
-      setTimeout(() => {
+      damageTimerRef.current = setTimeout(() => {
         let damage = 0
         const isCriticalMiss = newValue === 1
         const isCriticalHit = newValue === 6
@@ -819,7 +832,7 @@ export default function CardGameArena() {
           }
         })
 
-        setTimeout(() => {
+        endTurnTimerRef.current = setTimeout(() => {
           setGameState((prev) => ({
             ...prev,
             playerActiveIsAttacking: false,
@@ -834,13 +847,14 @@ export default function CardGameArena() {
           checkWinCondition()
 
           // End the current turn and transition to the defending player
+          // Add a small delay here to allow React to process checkWinCondition's state update
           setTimeout(() => {
-            endTurn(isCriticalHit) // Pass the critical hit flag to endTurn
-          }, 500)
+            endTurn(isCriticalHit)
+          }, 50) // Small delay to allow re-render from checkWinCondition to settle
         }, 300)
       }, 500)
     }, 1000)
-  }, [gameState, addToLog, applyDamage, checkWinCondition, endTurn])
+  }, [gameState, addToLog, applyDamage, checkWinCondition, endTurn, rollTimerRef, damageTimerRef, endTurnTimerRef])
 
   const rollReplacementDice = useCallback(() => {
     if (gameState.isRolling || !gameState.needsReplacementRoll) return
@@ -912,13 +926,16 @@ export default function CardGameArena() {
           ...prev,
           player: playerType === "player" ? updatedPlayerState : prev.player,
           opponent: playerType === "opponent" ? updatedPlayerState : prev.opponent,
-          skipNextTurnFor: playerType, // Tag out causes you to lose a turn
-          hasRolledThisTurn: true,
           isTaggingOut: false,
         }
       })
+
+      // End the turn after tagging out
+      setTimeout(() => {
+        endTurn()
+      }, 1000)
     },
-    [gameState.selectedGameMode?.id, addToLog],
+    [gameState.selectedGameMode?.id, addToLog, endTurn],
   )
 
   const handleEvolution = useCallback(
@@ -1454,6 +1471,14 @@ export default function CardGameArena() {
 
   const elementalTypes: Element[] = ["Fire", "Water", "Earth", "Air"]
 
+  useEffect(() => {
+    return () => {
+      if (rollTimerRef.current) clearTimeout(rollTimerRef.current)
+      if (damageTimerRef.current) clearTimeout(damageTimerRef.current)
+      if (endTurnTimerRef.current) clearTimeout(endTurnTimerRef.current)
+    }
+  }, [rollTimerRef, damageTimerRef, endTurnTimerRef]) // Add refs to dependency array for cleanup
+
   return (
     <>
       {gameState.isEndlessModeActive && gameState.gamePhase === "inGame" && (
@@ -1976,42 +2001,6 @@ export default function CardGameArena() {
                         </div>
                       </div>
                     )}
-
-                    {/* Action Buttons */}
-                    {gameState.turn === "player" && (
-                      <div className="flex flex-col gap-3 mt-6 w-full max-w-xs">
-                        <Button
-                          onClick={rollDice}
-                          disabled={gameState.hasRolledThisTurn || gameState.isRolling}
-                          className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-6 py-3 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
-                        >
-                          {gameState.isRolling ? "Rolling..." : "Roll Dice"}
-                        </Button>
-
-                        {gameState.selectedGameMode?.id === "set-3" && (
-                          <>
-                            <Button
-                              onClick={() => handleEvolution("player")}
-                              disabled={!canPlayerEvolve || gameState.hasRolledThisTurn || gameState.isRolling}
-                              className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-6 py-3 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
-                            >
-                              Evolve ({playerActiveCreature?.turnsSurvived || 0}/
-                              {gameState.selectedGameMode?.evolutionTurnsRequired || 3})
-                            </Button>
-                            <Button
-                              onClick={() => setGameState((prev) => ({ ...prev, isTaggingOut: true }))}
-                              disabled={!canPlayerTagOut || gameState.hasRolledThisTurn || gameState.isRolling}
-                              className="bg-yellow-600 hover:bg-yellow-700 text-white text-lg px-6 py-3 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
-                            >
-                              Tag Out
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    )}
-                    {gameState.turn === "opponent" && (
-                      <p className="text-white text-lg font-semibold mt-6 animate-pulse">Opponent's Turn...</p>
-                    )}
                   </div>
                 )}
               </div>
@@ -2354,6 +2343,44 @@ export default function CardGameArena() {
           </div>
         )}
       </div>
+      {gameState.gamePhase === "inGame" && !gameState.replacementPhaseForPlayer && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-black/70 backdrop-blur-sm flex justify-center items-center">
+          <div className="flex gap-3 w-full max-w-md">
+            {gameState.selectedGameMode?.id === "set-3" && (
+              <Button
+                onClick={() => setGameState((prev) => ({ ...prev, isTaggingOut: true }))}
+                disabled={!canPlayerTagOut || gameState.isRolling || gameState.turn !== "player"}
+                variant="default"
+                className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md"
+              >
+                Tag
+              </Button>
+            )}
+            <Button
+              onClick={gameState.needsReplacementRoll ? rollReplacementDice : rollDice}
+              disabled={
+                gameState.needsReplacementRoll
+                  ? gameState.isRolling || gameState.turn !== "player"
+                  : gameState.hasRolledThisTurn || gameState.isRolling || gameState.turn !== "player"
+              }
+              variant="default"
+              className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md"
+            >
+              Roll
+            </Button>
+            {gameState.selectedGameMode?.id === "set-3" && (
+              <Button
+                onClick={() => handleEvolution("player")}
+                disabled={!canPlayerEvolve || gameState.isRolling || gameState.turn !== "player"}
+                variant="default"
+                className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md"
+              >
+                Evolve
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Replacement Phase Overlay - Rendered outside the main game content div */}
       {gameState.gamePhase === "inGame" &&
