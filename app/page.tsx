@@ -16,6 +16,7 @@ import ArenaSlot from "@/components/arena-slot"
 import { CreatureCard } from "@/components/creature-card"
 import DiceComponent from "@/components/dice-component"
 import { RotateCcw, Trophy } from "lucide-react"
+import { loadWinTally, saveWinTally, handleWin, handleLoss, generateOpponentCreatures } from "@/lib/game-logic"
 
 interface PlayerState {
   activeCreature: Creature | null
@@ -25,7 +26,7 @@ interface PlayerState {
 
 type GamePhase = "setup" | "modeSelection" | "creatureSelection" | "instructions" | "coinToss" | "inGame" | "gameOver"
 
-interface GameMode {
+export interface GameMode {
   id: string
   name: string
   description: string
@@ -86,7 +87,8 @@ interface GameState {
   isCriticalHit: boolean
 
   isEndlessModeActive: boolean
-  endlessWins: number
+  endlessWins: number // Managed by game-logic.ts now
+  aiDifficulty: number // Managed by game-logic.ts now
   endlessTrophies: Record<string, number>
   isAchievementsOpen: boolean
 }
@@ -156,18 +158,20 @@ const initialGameProgressState = {
   coinFlipResult: null,
   isCriticalMiss: false,
   isCriticalHit: false,
-  endlessWins: 0,
-  isAchievementsOpen: false,
+  // endlessWins and aiDifficulty are now managed by game-logic.ts and loaded separately
 }
 
 export default function CardGameArena() {
   const [gameState, setGameState] = useState<GameState>(() => {
+    const initialWins = loadWinTally()
     return {
       ...initialGameProgressState,
       gamePhase: "setup",
       selectedGameMode: null,
       isEndlessModeActive: false,
-      endlessTrophies: {},
+      endlessWins: initialWins, // Initialize from localStorage
+      aiDifficulty: initialWins + 1, // Initialize AI difficulty
+      endlessTrophies: {}, // Loaded in useEffect
       isAchievementsOpen: false,
     }
   })
@@ -229,11 +233,14 @@ export default function CardGameArena() {
   }, [])
 
   const restartGame = useCallback(() => {
+    const initialWins = loadWinTally() // Load current win tally for endless mode
     setGameState((prev) => ({
       ...initialGameProgressState,
       gamePhase: "setup",
       selectedGameMode: null,
       isEndlessModeActive: false,
+      endlessWins: initialWins,
+      aiDifficulty: initialWins + 1,
       endlessTrophies: prev.endlessTrophies,
       isAchievementsOpen: false,
     }))
@@ -241,11 +248,14 @@ export default function CardGameArena() {
   }, [addToLog])
 
   const handleBackToMenu = useCallback(() => {
+    const initialWins = loadWinTally() // Load current win tally for endless mode
     setGameState((prev) => ({
       ...initialGameProgressState,
       gamePhase: "modeSelection",
       selectedGameMode: null,
       isEndlessModeActive: false,
+      endlessWins: initialWins,
+      aiDifficulty: initialWins + 1,
       endlessTrophies: prev.endlessTrophies,
       isAchievementsOpen: false,
     }))
@@ -256,20 +266,31 @@ export default function CardGameArena() {
     setGameState((prev) => {
       if (!prev.selectedGameMode) {
         // Fallback to a full menu return if something went wrong
+        const initialWins = loadWinTally()
         return {
           ...initialGameProgressState,
           gamePhase: "modeSelection",
           selectedGameMode: null,
           isEndlessModeActive: false,
+          endlessWins: initialWins,
+          aiDifficulty: initialWins + 1,
           endlessTrophies: prev.endlessTrophies,
           isAchievementsOpen: false,
         }
       }
+      // For endless mode, restart means starting a new run, so reset win tally
+      const newEndlessWins = prev.isEndlessModeActive ? 0 : prev.endlessWins
+      if (prev.isEndlessModeActive) {
+        saveWinTally(0) // Reset localStorage tally for a new endless run
+      }
+
       return {
         ...initialGameProgressState,
         gamePhase: "instructions",
         selectedGameMode: prev.selectedGameMode,
         isEndlessModeActive: prev.isEndlessModeActive,
+        endlessWins: newEndlessWins,
+        aiDifficulty: newEndlessWins + 1,
         endlessTrophies: prev.endlessTrophies,
         isAchievementsOpen: false,
       }
@@ -308,6 +329,11 @@ export default function CardGameArena() {
 
       const updatedBenchCreatures = targetPlayerState.benchCreatures.filter((c) => c.id !== newActiveCreature.id)
 
+      // If the old active creature is not KO'd, add it back to the bench
+      if (targetPlayerState.activeCreature && targetPlayerState.activeCreature.currentHp > 0) {
+        updatedBenchCreatures.push({ ...targetPlayerState.activeCreature, isFaceUp: true, turnsSurvived: 0 })
+      }
+
       const updatedPlayerState = {
         ...targetPlayerState,
         activeCreature: updatedActiveCreature,
@@ -333,6 +359,12 @@ export default function CardGameArena() {
         finalDamage += 10
       } else if (attacker.stage === "Level 3") {
         finalDamage += 20
+      }
+
+      // Apply AI difficulty damage buff if opponent is attacking
+      if (gameState.turn === "opponent") {
+        finalDamage += gameState.aiDifficulty - 1 // Add (difficulty - 1) extra damage
+        addToLog(`Opponent's AI difficulty adds ${gameState.aiDifficulty - 1} extra damage!`)
       }
 
       // Apply weakness/resistance only if not a critical miss
@@ -383,82 +415,51 @@ export default function CardGameArena() {
       addToLog(`${defender.name} took ${finalDamage} damage. HP: ${newHp}/${defender.maxHp}`)
       return newHp
     },
-    [addToLog, addDamageAnimation],
+    [addToLog, addDamageAnimation, gameState.turn, gameState.aiDifficulty],
   )
-
-  const generateOpponentForEndlessMode = useCallback((winCount: number, gameMode: GameMode): PlayerState => {
-    const opponentCreatureIds: string[] = []
-    let creaturesForOpponentSelection: Creature[] = []
-
-    if (gameMode.id === "set-2") {
-      creaturesForOpponentSelection = getAllLevel3Creatures()
-    } else {
-      // set-3
-      creaturesForOpponentSelection = getAllBasicCreatures()
-    }
-
-    const tempAvailable = [...creaturesForOpponentSelection]
-    while (opponentCreatureIds.length < gameMode.playerCreatureCount && tempAvailable.length > 0) {
-      const randomIndex = Math.floor(Math.random() * tempAvailable.length)
-      opponentCreatureIds.push(tempAvailable[randomIndex].id)
-      tempAvailable.splice(randomIndex, 1)
-    }
-
-    const hpBuff = 1 + winCount * 0.1 // 10% HP buff per win
-
-    const opponentCreatureInstances = opponentCreatureIds.map((id) => {
-      const template = getCreatureById(id)!
-      const baseHp = gameMode.id === "set-2" ? template.maxHp : gameMode.startingHp
-      const creatureMaxHp = baseHp * hpBuff
-      return {
-        ...createCreature(
-          template.id,
-          template.name,
-          template.element,
-          Math.floor(creatureMaxHp),
-          template.weakness,
-          template.resistance,
-          template.ability,
-          template.stage,
-          template.evolutionLine,
-        ),
-        isFaceUp: true,
-      }
-    })
-
-    return {
-      activeCreature: opponentCreatureInstances[0],
-      benchCreatures: opponentCreatureInstances.slice(1),
-      skippedTurn: false,
-    }
-  }, [])
 
   const handleEndlessNextBattleSetup = useCallback(() => {
     setGameState((prev) => {
-      const newWins = prev.endlessWins + 1
+      if (!prev.selectedGameMode) return prev
+
+      // Apply win effects using the game-logic helper
+      const updatedPlayerCreatures = [
+        ...(prev.player.activeCreature ? [prev.player.activeCreature] : []),
+        ...prev.player.benchCreatures,
+      ]
+      const {
+        winTally: newWins,
+        aiDifficulty: newAiDifficulty,
+        playerElementals: processedPlayerCreatures,
+      } = handleWin(
+        { winTally: prev.endlessWins, aiDifficulty: prev.aiDifficulty, playerElementals: updatedPlayerCreatures },
+        updatedPlayerCreatures,
+        prev.selectedGameMode,
+      )
+
+      // Re-distribute processed player creatures back to active/bench
+      const healedActive = processedPlayerCreatures[0] || null
+      const healedBench = processedPlayerCreatures.slice(1)
+
+      // Generate new opponent based on new win tally
+      const newOpponentCreatures = generateOpponentCreatures(newWins, prev.selectedGameMode)
+
       addToLog(`Victory! You have ${newWins} wins. Prepare for the next challenger!`)
-
-      const healCreature = (c: Creature | null): Creature | null => {
-        if (!c) return null
-        const wasDefeated = c.currentHp <= 0
-        const newHp = wasDefeated ? Math.floor(c.maxHp * 0.5) : Math.max(c.currentHp, Math.floor(c.maxHp * 0.75))
-        return { ...c, currentHp: newHp, turnsSurvived: 0 }
-      }
-
-      const healedActive = healCreature(prev.player.activeCreature)
-      const healedBench = prev.player.benchCreatures.map(healCreature).filter((c): c is Creature => c !== null)
-
-      const newOpponentState = generateOpponentForEndlessMode(newWins, prev.selectedGameMode!)
 
       return {
         ...prev,
         endlessWins: newWins,
+        aiDifficulty: newAiDifficulty,
         player: {
           ...prev.player,
           activeCreature: healedActive,
           benchCreatures: healedBench,
         },
-        opponent: newOpponentState,
+        opponent: {
+          activeCreature: newOpponentCreatures[0] || null,
+          benchCreatures: newOpponentCreatures.slice(1),
+          skippedTurn: false,
+        },
         turn: "player",
         hasRolledThisTurn: false,
         isRolling: false,
@@ -469,9 +470,21 @@ export default function CardGameArena() {
         opponentActiveIsShaking: false,
         playerActiveIsDefending: false,
         opponentActiveIsDefending: false,
+        isGameOver: false, // Reset game over state for next battle
+        winner: null,
+        skipNextTurnFor: null,
+        lastDieRoll: null,
+        lastDieRollPlayer: null,
+        isCorrupted: false,
+        corruptedTurnsRemaining: 0,
+        corruptedPlayer: null,
+        hasPlayerEvolved: false,
+        hasOpponentEvolved: false,
+        isCriticalMiss: false,
+        isCriticalHit: false,
       }
     })
-  }, [addToLog, generateOpponentForEndlessMode])
+  }, [addToLog])
 
   const handleEndlessRunEnd = useCallback(() => {
     setGameState((prev) => {
@@ -490,12 +503,21 @@ export default function CardGameArena() {
         addToLog(`Your run ended with ${currentWins} wins.`)
       }
 
+      // Apply loss effects using the game-logic helper
+      const { winTally: resetWinTally, aiDifficulty: resetAiDifficulty } = handleLoss({
+        winTally: prev.endlessWins,
+        aiDifficulty: prev.aiDifficulty,
+        playerElementals: [], // Not needed for loss logic, but part of interface
+      })
+
       return {
         ...prev,
         isGameOver: true,
         winner: "opponent",
         gamePhase: "gameOver",
         endlessTrophies: newTrophies,
+        endlessWins: resetWinTally, // Reset win tally in state
+        aiDifficulty: resetAiDifficulty, // Reset AI difficulty in state
       }
     })
   }, [addToLog])
@@ -571,8 +593,7 @@ export default function CardGameArena() {
         gameState.isGameOver ||
         gameState.gamePhase !== "inGame" ||
         gameState.replacementPhaseForPlayer ||
-        gameState.isTaggingOut ||
-        gameState.needsReplacementRoll
+        gameState.isTaggingOut
       )
         return
 
@@ -630,6 +651,7 @@ export default function CardGameArena() {
           // Reset critical animations on turn end
           isCriticalMiss: false,
           isCriticalHit: false,
+          needsReplacementRoll: false, // Ensure this is reset
         }
       })
 
@@ -688,7 +710,6 @@ export default function CardGameArena() {
       gameState.gamePhase,
       addToLog,
       gameState.replacementPhaseForPlayer,
-      gameState.needsReplacementRoll,
       addDamageAnimation,
       checkWinCondition,
     ],
@@ -702,8 +723,7 @@ export default function CardGameArena() {
       gameState.hasRolledThisTurn ||
       gameState.gamePhase !== "inGame" ||
       gameState.replacementPhaseForPlayer ||
-      gameState.isTaggingOut ||
-      gameState.needsReplacementRoll
+      gameState.isTaggingOut
     )
       return
 
@@ -856,36 +876,7 @@ export default function CardGameArena() {
     }, 1000)
   }, [gameState, addToLog, applyDamage, checkWinCondition, endTurn, rollTimerRef, damageTimerRef, endTurnTimerRef])
 
-  const rollReplacementDice = useCallback(() => {
-    if (gameState.isRolling || !gameState.needsReplacementRoll) return
-
-    setGameState((prev) => ({
-      ...prev,
-      isRolling: true,
-      playerActiveIsAttacking: false,
-      opponentActiveIsAttacking: false,
-      playerActiveIsShaking: false,
-      opponentActiveIsShaking: false,
-      playerActiveIsDefending: false,
-      opponentActiveIsDefending: false,
-      // Reset critical animations
-      isCriticalMiss: false,
-      isCriticalHit: false,
-    }))
-    addToLog("Player rolls the die after replacement...")
-
-    setTimeout(() => {
-      const newValue = Math.floor(Math.random() * 6) + 1
-      setGameState((prev) => ({
-        ...prev,
-        diceValue: newValue,
-        isRolling: false,
-        needsReplacementRoll: false,
-      }))
-      addToLog(`Replacement die rolled: ${newValue}!`)
-      endTurn() // End the turn after the replacement roll
-    }, 1000)
-  }, [gameState.isRolling, gameState.needsReplacementRoll, addToLog, endTurn])
+  // Removed rollReplacementDice as it's no longer needed.
 
   const handleTagOut = useCallback(
     (playerType: "player" | "opponent", benchCreature: Creature) => {
@@ -1004,13 +995,19 @@ export default function CardGameArena() {
   )
 
   const handleChallengeSelection = (isEndless: boolean) => {
-    setGameState((prev) => ({
-      ...prev,
-      isEndlessModeActive: isEndless,
-      endlessWins: 0,
-      gamePhase: "instructions",
-      selectionSubPhase: null,
-    }))
+    setGameState((prev) => {
+      const newEndlessWins = isEndless ? loadWinTally() : 0 // Load existing tally for endless, or reset for standard
+      const newAiDifficulty = newEndlessWins + 1
+
+      return {
+        ...prev,
+        isEndlessModeActive: isEndless,
+        endlessWins: newEndlessWins,
+        aiDifficulty: newAiDifficulty,
+        gamePhase: "instructions",
+        selectionSubPhase: null,
+      }
+    })
     addToLog(isEndless ? "Endless Challenge selected!" : "Standard Match selected.")
   }
 
@@ -1134,57 +1131,11 @@ export default function CardGameArena() {
         const playerActive = { ...selectedPlayerCreatureInstances[0], isFaceUp: false }
         const playerBench = selectedPlayerCreatureInstances.slice(1).map((c) => ({ ...c, isFaceUp: false }))
 
-        const opponentCreatureIds: string[] = []
-        let creaturesForOpponentSelection: Creature[] = []
+        // Generate opponent creatures using the helper function
+        const opponentCreatureInstances = generateOpponentCreatures(prev.endlessWins, selectedMode)
 
-        if (selectedMode.id === "set-2") {
-          creaturesForOpponentSelection = getAllLevel3Creatures() // Get Level 3 for Set 2
-        } else {
-          // Set 3
-          creaturesForOpponentSelection = getAllBasicCreatures()
-        }
-
-        const playerCreatureIdsSet = new Set(playerCreatureIds)
-        const availableForOpponent = creaturesForOpponentSelection.filter((c) => !playerCreatureIdsSet.has(c.id))
-
-        // Ensure opponent gets a unique creature, or a random one if unique is not possible
-        const tempAvailable = [...availableForOpponent]
-        while (opponentCreatureIds.length < selectedMode.playerCreatureCount && tempAvailable.length > 0) {
-          const randomIndex = Math.floor(Math.random() * tempAvailable.length)
-          const selectedCreature = tempAvailable[randomIndex]
-          opponentCreatureIds.push(selectedCreature.id)
-          tempAvailable.splice(randomIndex, 1)
-        }
-
-        // Fallback if not enough unique creatures (shouldn't happen with current data, but good practice)
-        while (opponentCreatureIds.length < selectedMode.playerCreatureCount) {
-          const randomIndex = Math.floor(Math.random() * creaturesForOpponentSelection.length)
-          const selectedCreature = creaturesForOpponentSelection[randomIndex]
-          if (!opponentCreatureIds.includes(selectedCreature.id)) {
-            opponentCreatureIds.push(selectedCreature.id)
-          }
-        }
-
-        const selectedOpponentCreatureInstances = opponentCreatureIds.map((id) => {
-          const template = getCreatureById(id)
-          if (!template) throw new Error(`Creature with ID ${id} not found.`)
-          // For Set 2, use the creature's actual maxHp from its definition
-          const creatureMaxHp = selectedMode.id === "set-2" ? template.maxHp : selectedMode.startingHp
-          return createCreature(
-            template.id,
-            template.name,
-            template.element,
-            creatureMaxHp, // Use creature's actual HP for Set 2, else mode's starting HP
-            template.weakness,
-            template.resistance,
-            template.ability,
-            template.stage,
-            template.evolutionLine,
-          )
-        })
-
-        const opponentActive = { ...selectedOpponentCreatureInstances[0], isFaceUp: false }
-        const opponentBench = selectedOpponentCreatureInstances.slice(1).map((c) => ({ ...c, isFaceUp: false }))
+        const opponentActive = { ...opponentCreatureInstances[0], isFaceUp: false }
+        const opponentBench = opponentCreatureInstances.slice(1).map((c) => ({ ...c, isFaceUp: false }))
 
         return {
           ...prev,
@@ -1260,7 +1211,7 @@ export default function CardGameArena() {
         }, 3000)
       }, 2000)
     },
-    [addToLog],
+    [addToLog, gameState.endlessWins], // Add endlessWins to dependency array
   )
 
   const handleElementSelection = useCallback(
@@ -1403,14 +1354,20 @@ export default function CardGameArena() {
         const newStateAfterReplacement = handleCreatureReplacementLogic(prev, "player", creature)
         addToLog(`Player replaced with ${creature.name}.`)
 
+        // After replacement, mark as rolled for this turn and exit replacement phase.
+        // The turn will then end immediately.
         return {
           ...newStateAfterReplacement,
-          needsReplacementRoll: true,
-          hasRolledThisTurn: false,
+          hasRolledThisTurn: true, // Mark as rolled for this turn
+          replacementPhaseForPlayer: null, // Exit replacement phase
         }
       })
+      // End the turn after a short delay to allow state update to process
+      setTimeout(() => {
+        endTurn()
+      }, 100)
     },
-    [gameState.selectedGameMode?.id, addToLog, handleCreatureReplacementLogic],
+    [gameState.selectedGameMode?.id, addToLog, handleCreatureReplacementLogic, endTurn],
   )
 
   const confirmRosterSelection = useCallback(() => {
@@ -1447,7 +1404,6 @@ export default function CardGameArena() {
     !gameState.isGameOver &&
     !gameState.hasRolledThisTurn &&
     !gameState.replacementPhaseForPlayer &&
-    !gameState.needsReplacementRoll &&
     !gameState.isTaggingOut
 
   const canPlayerTagOut =
@@ -1457,7 +1413,7 @@ export default function CardGameArena() {
     !gameState.isGameOver &&
     !gameState.hasRolledThisTurn &&
     !gameState.replacementPhaseForPlayer &&
-    !gameState.needsReplacementRoll &&
+    !gameState.isTaggingOut &&
     gameState.selectedGameMode?.id === "set-3" // Only allow tag out in Set 3
 
   const selectedCreatureInstancesForDisplay = gameState.playerSelectedCreatureIds
@@ -1982,7 +1938,7 @@ export default function CardGameArena() {
                     />
                     {/* Corruption Status Indicator - only show in Evolution Mode */}
                     {gameState.isCorrupted && gameState.selectedGameMode?.id === "set-3" && (
-                      <div className="flex flex-col items-center gap-2 mt-4">
+                      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
                         <div className="bg-purple-900/80 backdrop-blur-sm rounded-lg px-4 py-2 border border-purple-500">
                           <div className="flex items-center gap-2">
                             <span className="text-2xl">🌀</span>
@@ -2357,12 +2313,8 @@ export default function CardGameArena() {
               </Button>
             )}
             <Button
-              onClick={gameState.needsReplacementRoll ? rollReplacementDice : rollDice}
-              disabled={
-                gameState.needsReplacementRoll
-                  ? gameState.isRolling || gameState.turn !== "player"
-                  : gameState.hasRolledThisTurn || gameState.isRolling || gameState.turn !== "player"
-              }
+              onClick={rollDice} // Always call rollDice now
+              disabled={gameState.hasRolledThisTurn || gameState.isRolling || gameState.turn !== "player"}
               variant="default"
               className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md"
             >

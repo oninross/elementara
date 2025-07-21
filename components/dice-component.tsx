@@ -23,6 +23,7 @@ export default function DiceComponent({
   const [displayValue, setDisplayValue] = useState(value)
   const [showCriticalMiss, setShowCriticalMiss] = useState(false)
   const [showCriticalHit, setShowCriticalHit] = useState(false)
+  const [showCorruptedDiceNotification, setShowCorruptedDiceNotification] = useState(false)
 
   useEffect(() => {
     if (!isRolling) {
@@ -146,6 +147,13 @@ export default function DiceComponent({
           <div className="animate-critical-miss text-red-500 font-bold text-2xl sm:text-3xl md:text-4xl drop-shadow-lg whitespace-nowrap text-center">
             Critical Hit!
           </div>
+        </div>
+      )}
+
+      {/* Corrupted Dice Notification - Top Center */}
+      {showCorruptedDiceNotification && (
+        <div className="fixed top-0 left-1/2 -translate-x-1/2 z-[100] p-4 bg-purple-800 text-white rounded-lg shadow-xl animate-fade-in-out text-center text-lg sm:text-xl font-bold border-2 border-purple-400">
+          CORRUPTED DICE ACTIVATED!
         </div>
       )}
     </div>
