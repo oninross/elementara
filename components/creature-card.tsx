@@ -294,7 +294,7 @@ export const CreatureCard = ({
         {/* Card Header - Name and Level aligned with same font size */}
         <div
           className={cn(
-            "absolute bottom-6 left-2 right-2 z-[6]",
+            "absolute bottom-10 left-2 right-2 z-[6]",
             elementTextColors[creature.element],
             elementTextShadows[creature.element],
             "font-extrabold"
@@ -314,7 +314,7 @@ export const CreatureCard = ({
         </div>
 
         {/* HP Bar */}
-        <div className="absolute bottom-4 left-2 right-2 z-[6]">
+        <div className="absolute bottom-7 left-2 right-2 z-[6]">
           <div className="h-1 sm:h-1.5 md:h-2 bg-black/70 rounded-full border border-black/50">
             <div
               className={cn(
@@ -334,7 +334,7 @@ export const CreatureCard = ({
         {/* HP Points Display - With black frosted background */}
         <div
           className={cn(
-            "absolute bottom-0 left-2 right-2 z-[6]",
+            "absolute bottom-2 left-2 right-2 z-[6]",
             elementTextColors[creature.element],
             elementTextShadows[creature.element]
           )}>
