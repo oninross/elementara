@@ -7,7 +7,8 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "format": "npx prettier . --write"
+    "format": "npx prettier . --write",
+    "prepare": "npx husky install"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
