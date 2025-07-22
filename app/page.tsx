@@ -180,6 +180,7 @@ const initialGameProgressState = {
 };
 
 export default function CardGameArena() {
+  //@ts-ignore
   const [gameState, setGameState] = useState<GameState>(() => {
     const initialWins = loadWinTally();
     return {
@@ -235,7 +236,7 @@ export default function CardGameArena() {
         setGameState((prev) => ({
           ...prev,
           damageAnimations: prev.damageAnimations.filter(
-            (anim) => anim.timestamp !== newAnimation.timestamp,
+            (anim) => anim.timestamp !== newAnimation.timestamp
           ),
         }));
       }, 2000);
@@ -252,11 +253,12 @@ export default function CardGameArena() {
         });
       }, 1000);
     },
-    [],
+    []
   );
 
   const restartGame = useCallback(() => {
     const initialWins = loadWinTally(); // Load current win tally for endless mode
+    //@ts-ignore
     setGameState((prev) => ({
       ...initialGameProgressState,
       gamePhase: "setup",
@@ -272,6 +274,7 @@ export default function CardGameArena() {
 
   const handleBackToMenu = useCallback(() => {
     const initialWins = loadWinTally(); // Load current win tally for endless mode
+    //@ts-ignore
     setGameState((prev) => ({
       ...initialGameProgressState,
       gamePhase: "modeSelection",
@@ -286,6 +289,7 @@ export default function CardGameArena() {
   }, [addToLog]);
 
   const handleRestartCurrentMode = useCallback(() => {
+    //@ts-ignore
     setGameState((prev) => {
       if (!prev.selectedGameMode) {
         // Fallback to a full menu return if something went wrong
@@ -349,14 +353,14 @@ export default function CardGameArena() {
     (
       prevState: GameState,
       playerType: "player" | "opponent",
-      newActiveCreature: Creature,
+      newActiveCreature: Creature
     ): GameState => {
       const targetPlayerState =
         playerType === "player" ? prevState.player : prevState.opponent;
       const updatedActiveCreature = { ...newActiveCreature, isFaceUp: true };
 
       const updatedBenchCreatures = targetPlayerState.benchCreatures.filter(
-        (c) => c.id !== newActiveCreature.id,
+        (c) => c.id !== newActiveCreature.id
       );
 
       // If the old active creature is not KO'd, add it back to the bench
@@ -385,7 +389,7 @@ export default function CardGameArena() {
         replacementPhaseForPlayer: null,
       };
     },
-    [],
+    []
   );
 
   const applyDamage = useCallback(
@@ -393,7 +397,7 @@ export default function CardGameArena() {
       attacker: Creature,
       defender: Creature,
       baseDamage: number,
-      isCriticalMiss = false,
+      isCriticalMiss = false
     ): number => {
       let finalDamage = baseDamage;
 
@@ -410,7 +414,7 @@ export default function CardGameArena() {
         addToLog(
           `Opponent's AI difficulty adds ${
             gameState.aiDifficulty - 1
-          } extra damage!`,
+          } extra damage!`
         );
       }
 
@@ -419,12 +423,12 @@ export default function CardGameArena() {
         if (defender.weakness === attacker.element) {
           finalDamage += 10;
           addToLog(
-            `${defender.name} is weak to ${attacker.element}! Extra 10 damage.`,
+            `${defender.name} is weak to ${attacker.element}! Extra 10 damage.`
           );
         } else if (defender.resistance === attacker.element) {
           finalDamage -= 10;
           addToLog(
-            `${defender.name} resists ${attacker.element}! Reduced 10 damage.`,
+            `${defender.name} resists ${attacker.element}! Reduced 10 damage.`
           );
         }
       }
@@ -445,41 +449,34 @@ export default function CardGameArena() {
         const updatedPlayer = { ...prev.player };
         const updatedOpponent = { ...prev.opponent };
 
-        if (prev.player.activeCreature?.id === defender.id) {
+        if (
+          prev.player.activeCreature &&
+          prev.player.activeCreature === defender
+        ) {
           updatedPlayer.activeCreature = {
             ...defender,
             currentHp: Math.max(0, defender.currentHp - finalDamage),
           };
-        } else if (prev.opponent.activeCreature?.id === defender.id) {
+        } else if (
+          prev.opponent.activeCreature &&
+          prev.opponent.activeCreature === defender
+        ) {
           updatedOpponent.activeCreature = {
             ...defender,
             currentHp: Math.max(0, defender.currentHp - finalDamage),
           };
         }
 
-        // Also update HP for benched creatures if they are the defender (e.g., if a future mechanic targets bench)
-        updatedPlayer.benchCreatures = updatedPlayer.benchCreatures.map((c) =>
-          c.id === defender.id
-            ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) }
-            : c,
-        );
-        updatedOpponent.benchCreatures = updatedOpponent.benchCreatures.map(
-          (c) =>
-            c.id === defender.id
-              ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) }
-              : c,
-        );
-
         return { ...prev, player: updatedPlayer, opponent: updatedOpponent };
       });
 
       const newHp = Math.max(0, defender.currentHp - finalDamage);
       addToLog(
-        `${defender.name} took ${finalDamage} damage. HP: ${newHp}/${defender.maxHp}`,
+        `${defender.name} took ${finalDamage} damage. HP: ${newHp}/${defender.maxHp}`
       );
       return newHp;
     },
-    [addToLog, addDamageAnimation, gameState.turn, gameState.aiDifficulty],
+    [addToLog, addDamageAnimation, gameState.turn, gameState.aiDifficulty]
   );
 
   const handleEndlessNextBattleSetup = useCallback(() => {
@@ -502,7 +499,7 @@ export default function CardGameArena() {
           playerElementals: updatedPlayerCreatures,
         },
         updatedPlayerCreatures,
-        prev.selectedGameMode,
+        prev.selectedGameMode
       );
 
       // Re-distribute processed player creatures back to active/bench
@@ -512,11 +509,11 @@ export default function CardGameArena() {
       // Generate new opponent based on new win tally
       const newOpponentCreatures = generateOpponentCreatures(
         newWins,
-        prev.selectedGameMode,
+        prev.selectedGameMode
       );
 
       addToLog(
-        `Victory! You have ${newWins} wins. Prepare for the next challenger!`,
+        `Victory! You have ${newWins} wins. Prepare for the next challenger!`
       );
 
       return {
@@ -571,7 +568,7 @@ export default function CardGameArena() {
         if (typeof window !== "undefined") {
           localStorage.setItem(
             `endless_trophy_${modeId}`,
-            currentWins.toString(),
+            currentWins.toString()
           );
         }
         newTrophies[modeId] = currentWins;
@@ -621,7 +618,7 @@ export default function CardGameArena() {
           newState.player.activeCreature.currentHp <= 0
         );
         const hasPlayerBench = newState.player.benchCreatures.some(
-          (c) => c.currentHp > 0,
+          (c) => c.currentHp > 0
         );
         if (isPlayerActiveDefeated && !hasPlayerBench) {
           playerLost = true;
@@ -635,20 +632,20 @@ export default function CardGameArena() {
           newState.opponent.activeCreature.currentHp <= 0
         );
         const hasOpponentBench = newState.opponent.benchCreatures.some(
-          (c) => c.currentHp > 0,
+          (c) => c.currentHp > 0
         );
         if (isOpponentActiveDefeated && !hasOpponentBench) {
           opponentLost = true;
         } else if (isOpponentActiveDefeated && hasOpponentBench) {
           const viableBench = newState.opponent.benchCreatures.filter(
-            (c) => c.currentHp > 0,
+            (c) => c.currentHp > 0
           );
           const replacement =
             viableBench[Math.floor(Math.random() * viableBench.length)];
           const stateAfterOpponentReplacement = handleCreatureReplacementLogic(
             newState,
             "opponent",
-            replacement,
+            replacement
           );
           addToLog(`Opponent replaced with ${replacement.name}.`);
           return stateAfterOpponentReplacement;
@@ -707,7 +704,7 @@ export default function CardGameArena() {
         gameState.isTaggingOut
       )
         return;
-
+      //@ts-ignore
       setGameState((prev) => {
         const currentTurnPlayerType = prev.turn; // "player" or "opponent"
         const currentTurnPlayerState =
@@ -739,14 +736,14 @@ export default function CardGameArena() {
           addToLog(
             `${
               currentTurnPlayerType === "player" ? "Player" : "Opponent"
-            } will skip their next turn due to Critical Hit!`,
+            } will skip their next turn due to Critical Hit!`
           );
         }
 
         // Check if the *next* player (who is about to start their turn) is supposed to skip
         if (newSkipNextTurnFor === nextTurn) {
           addToLog(
-            `${nextTurn === "player" ? "Player" : "Opponent"} skips their turn!`,
+            `${nextTurn === "player" ? "Player" : "Opponent"} skips their turn!`
           );
           newSkipNextTurnFor = null; // Clear the flag after it's acted upon
           nextTurn = nextTurn === "player" ? "opponent" : "player"; // Skip this player, move to the next
@@ -755,7 +752,7 @@ export default function CardGameArena() {
         addToLog(
           `Turn ended. It's now ${
             nextTurn === "player" ? "your" : "opponent's"
-          } turn.`,
+          } turn.`
         );
 
         return {
@@ -799,14 +796,14 @@ export default function CardGameArena() {
 
             if (corruptedCreature && corruptedCreature.currentHp > 0) {
               addToLog(
-                `${corruptedCreature.name} suffers Aftershock Penalty! +10 damage from corruption backlash!`,
+                `${corruptedCreature.name} suffers Aftershock Penalty! +10 damage from corruption backlash!`
               );
 
               // Apply the aftershock damage
               const aftershockDamage = 10;
               const newHp = Math.max(
                 0,
-                corruptedCreature.currentHp - aftershockDamage,
+                corruptedCreature.currentHp - aftershockDamage
               );
 
               // Add damage animation
@@ -861,7 +858,7 @@ export default function CardGameArena() {
       gameState.replacementPhaseForPlayer,
       addDamageAnimation,
       checkWinCondition,
-    ],
+    ]
   );
 
   const rollDice = useCallback(() => {
@@ -869,7 +866,7 @@ export default function CardGameArena() {
       "rollDice called. Current turn:",
       gameState.turn,
       "hasRolledThisTurn:",
-      gameState.hasRolledThisTurn,
+      gameState.hasRolledThisTurn
     );
     if (
       gameState.isRolling ||
@@ -897,7 +894,7 @@ export default function CardGameArena() {
       isCriticalHit: false,
     }));
     addToLog(
-      `${gameState.turn === "player" ? "Player" : "Opponent"} rolls the dice...`,
+      `${gameState.turn === "player" ? "Player" : "Opponent"} rolls the dice...`
     );
 
     // Clear any previous timers to prevent conflicts from previous rolls
@@ -1004,7 +1001,7 @@ export default function CardGameArena() {
             addToLog(`${attacker.name} landed a Critical Hit!`);
             applyDamage(attacker, defender, damage);
             addToLog(
-              `${attacker.name} deals massive damage but forfeits their next turn!`,
+              `${attacker.name} deals massive damage but forfeits their next turn!`
             ); // Log for attacker
             break;
         }
@@ -1072,7 +1069,7 @@ export default function CardGameArena() {
         }
 
         const benchIndex = currentPlayerState.benchCreatures.findIndex(
-          (c) => c.id === benchCreature.id,
+          (c) => c.id === benchCreature.id
         );
         if (benchIndex === -1) {
           addToLog("Selected creature not found on bench.");
@@ -1102,7 +1099,7 @@ export default function CardGameArena() {
         addToLog(
           `${playerType === "player" ? "Player" : "Opponent"} tagged out ${
             oldActiveCreature.name
-          } for ${newActiveCreature.name}.`,
+          } for ${newActiveCreature.name}.`
         );
 
         return {
@@ -1119,7 +1116,7 @@ export default function CardGameArena() {
         endTurn();
       }, 1000);
     },
-    [gameState.selectedGameMode?.id, addToLog, endTurn],
+    [gameState.selectedGameMode?.id, addToLog, endTurn]
   );
 
   const handleEvolution = useCallback(
@@ -1179,7 +1176,7 @@ export default function CardGameArena() {
         }
       });
     },
-    [gameState.selectedGameMode?.id, addToLog, endTurn],
+    [gameState.selectedGameMode?.id, addToLog, endTurn]
   );
 
   const handleModeSelection = useCallback(
@@ -1192,7 +1189,7 @@ export default function CardGameArena() {
       }));
       addToLog(`You selected ${mode.name}. Choose your challenge.`);
     },
-    [addToLog],
+    [addToLog]
   );
 
   const handleChallengeSelection = (isEndless: boolean) => {
@@ -1210,7 +1207,7 @@ export default function CardGameArena() {
       };
     });
     addToLog(
-      isEndless ? "Endless Challenge selected!" : "Standard Match selected.",
+      isEndless ? "Endless Challenge selected!" : "Standard Match selected."
     );
   };
 
@@ -1263,7 +1260,7 @@ export default function CardGameArena() {
             return;
           } else {
             const canTagOut = gameState.opponent.benchCreatures.some(
-              (c) => c.currentHp > 0,
+              (c) => c.currentHp > 0
             );
             const hasWeakness =
               opponentActive.weakness === playerActive.element;
@@ -1277,7 +1274,7 @@ export default function CardGameArena() {
                 // Call tag out after a short delay
                 setTimeout(
                   () => handleTagOut("opponent", viableBenchCreature),
-                  500,
+                  500
                 );
                 return;
               }
@@ -1339,7 +1336,7 @@ export default function CardGameArena() {
               template.resistance,
               template.ability,
               template.stage,
-              template.evolutionLine,
+              template.evolutionLine
             );
           });
 
@@ -1354,7 +1351,7 @@ export default function CardGameArena() {
         // Generate opponent creatures using the helper function
         const opponentCreatureInstances = generateOpponentCreatures(
           prev.endlessWins,
-          selectedMode,
+          selectedMode
         ).map((template) =>
           // Create a new instance for the opponent, even if same as player
           createCreature(
@@ -1368,8 +1365,8 @@ export default function CardGameArena() {
             template.resistance,
             template.ability,
             template.stage,
-            template.evolutionLine,
-          ),
+            template.evolutionLine
+          )
         );
 
         const opponentActive = {
@@ -1434,7 +1431,7 @@ export default function CardGameArena() {
         addToLog(
           `Coin toss result: ${coinResult}! ${
             firstPlayer === "player" ? "You" : "Opponent"
-          } go first!`,
+          } go first!`
         );
 
         // Wait a bit longer to show the result, then proceed to game
@@ -1470,7 +1467,7 @@ export default function CardGameArena() {
         }, 3000);
       }, 2000);
     },
-    [addToLog, gameState.endlessWins], // Add endlessWins to dependency array
+    [addToLog, gameState.endlessWins] // Add endlessWins to dependency array
   );
 
   const handleElementSelection = useCallback(
@@ -1481,13 +1478,13 @@ export default function CardGameArena() {
 
       if (gameState.selectedGameMode?.id === "set-2") {
         creaturesForSelection = getAllLevel3Creatures().filter(
-          (c) => c.element === element,
+          (c) => c.element === element
         );
         nextSubPhase = "chooseSpecificCreatureForSet2";
       } else {
         // Set 3
         creaturesForSelection = getAllBasicCreatures().filter(
-          (c) => c.element === element,
+          (c) => c.element === element
         );
         nextSubPhase = "chooseCreature";
       }
@@ -1496,7 +1493,7 @@ export default function CardGameArena() {
         addToLog(
           `No ${
             gameState.selectedGameMode?.id === "set-2" ? "Level 3" : "basic"
-          } ${element} creatures available. Please choose another element.`,
+          } ${element} creatures available. Please choose another element.`
         );
         return;
       }
@@ -1509,7 +1506,7 @@ export default function CardGameArena() {
       }));
       addToLog(`You chose the ${element} element. Now pick a creature.`);
     },
-    [gameState.selectedGameMode, addToLog],
+    [gameState.selectedGameMode, addToLog]
   );
 
   const proceedFromInstructions = useCallback(() => {
@@ -1544,7 +1541,7 @@ export default function CardGameArena() {
 
       initializeGameRostersAndProceedToCoinToss(
         [creatureId],
-        gameState.selectedGameMode,
+        gameState.selectedGameMode
       );
       addToLog(`Selected ${selectedCreature.name} for Set 2.`);
     },
@@ -1552,7 +1549,7 @@ export default function CardGameArena() {
       gameState.selectedGameMode,
       addToLog,
       initializeGameRostersAndProceedToCoinToss,
-    ],
+    ]
   );
 
   const handleCreatureSelection = useCallback(
@@ -1578,11 +1575,11 @@ export default function CardGameArena() {
         if (currentSelection.length < maxCreatures) {
           currentSelection.push(creatureId);
           addToLog(
-            `Added ${selectedCreature.name} (${selectedCreature.element}) to your roster.`,
+            `Added ${selectedCreature.name} (${selectedCreature.element}) to your roster.`
           );
         } else {
           addToLog(
-            `Your roster is full (${maxCreatures} creatures selected). Remove one to add another.`,
+            `Your roster is full (${maxCreatures} creatures selected). Remove one to add another.`
           );
         }
 
@@ -1599,7 +1596,7 @@ export default function CardGameArena() {
         };
       });
     },
-    [addToLog],
+    [addToLog]
   );
 
   const handleRemoveSelectedCreature = useCallback(
@@ -1615,7 +1612,7 @@ export default function CardGameArena() {
           addToLog(
             `Removed ${
               getCreatureById(removedCreatureId)?.name
-            } from your roster.`,
+            } from your roster.`
           );
         }
         const maxCreatures = prev.selectedGameMode?.playerCreatureCount || 3;
@@ -1630,7 +1627,7 @@ export default function CardGameArena() {
         };
       });
     },
-    [addToLog],
+    [addToLog]
   );
 
   const handlePlayerReplacementSelection = useCallback(
@@ -1642,7 +1639,7 @@ export default function CardGameArena() {
         const newStateAfterReplacement = handleCreatureReplacementLogic(
           prev,
           "player",
-          creature,
+          creature
         );
         addToLog(`Player replaced with ${creature.name}.`);
 
@@ -1664,7 +1661,7 @@ export default function CardGameArena() {
       addToLog,
       handleCreatureReplacementLogic,
       endTurn,
-    ],
+    ]
   );
 
   const confirmRosterSelection = useCallback(() => {
@@ -1683,7 +1680,7 @@ export default function CardGameArena() {
 
     initializeGameRostersAndProceedToCoinToss(
       gameState.playerSelectedCreatureIds,
-      gameState.selectedGameMode,
+      gameState.selectedGameMode
     );
   }, [
     gameState.playerSelectedCreatureIds,
@@ -1754,9 +1751,8 @@ export default function CardGameArena() {
         className={cn(
           "min-h-screen p-2 sm:p-4 relative flex items-center justify-center bg-black",
           gameState.replacementPhaseForPlayer &&
-            "opacity-30 pointer-events-none", // Dim and disable interaction
-        )}
-      >
+            "opacity-30 pointer-events-none" // Dim and disable interaction
+        )}>
         {gameState.gamePhase === "setup" && (
           <div className="fixed inset-0 flex flex-col items-center justify-center bg-black text-white p-4 text-center z-20">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 drop-shadow-lg">
@@ -1778,8 +1774,7 @@ export default function CardGameArena() {
             </p>
             <Button
               onClick={initiateGameSetup}
-              className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
-            >
+              className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105">
               Start Game
             </Button>
           </div>
@@ -1791,8 +1786,7 @@ export default function CardGameArena() {
             <Button
               onClick={restartGame}
               size="icon"
-              className="w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg transition-all duration-200 hover:scale-105 hover:text-white"
-            >
+              className="w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg transition-all duration-200 hover:scale-105 hover:text-white">
               <RotateCcw className="h-5 w-5 text-black" />
               <span className="sr-only">Restart Game</span>
             </Button>
@@ -1821,7 +1815,7 @@ export default function CardGameArena() {
                             gameState.turn === "player"
                           ) {
                             addToLog(
-                              "You cannot interact with opponent's creatures.",
+                              "You cannot interact with opponent's creatures."
                             );
                           }
                         }}
@@ -1832,8 +1826,7 @@ export default function CardGameArena() {
                         .map((anim) => (
                           <div
                             key={anim.timestamp}
-                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
-                          >
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
                             <div className="text-red-500 font-bold text-2xl sm:text-3xl md:text-4xl animate-damage-float drop-shadow-lg">
                               -{anim.damage}
                             </div>
@@ -1859,7 +1852,7 @@ export default function CardGameArena() {
                   isDamaged={
                     opponentActiveCreature
                       ? gameState.damagedCreatures.has(
-                          opponentActiveCreature.id,
+                          opponentActiveCreature.id
                         )
                       : false
                   }
@@ -1874,7 +1867,7 @@ export default function CardGameArena() {
                       gameState.turn === "player"
                     ) {
                       addToLog(
-                        "You cannot interact with opponent's creatures.",
+                        "You cannot interact with opponent's creatures."
                       );
                     }
                   }}
@@ -1883,13 +1876,12 @@ export default function CardGameArena() {
                 {opponentActiveCreature &&
                   gameState.damageAnimations
                     .filter(
-                      (anim) => anim.creatureId === opponentActiveCreature.id,
+                      (anim) => anim.creatureId === opponentActiveCreature.id
                     )
                     .map((anim) => (
                       <div
                         key={anim.timestamp}
-                        className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
-                      >
+                        className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
                         <div className="text-red-500 font-bold text-3xl sm:text-4xl md:text-5xl animate-damage-float drop-shadow-lg">
                           -{anim.damage}
                         </div>
@@ -1912,8 +1904,7 @@ export default function CardGameArena() {
                         <Button
                           onClick={() => handleChallengeSelection(false)}
                           variant="outline"
-                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
-                        >
+                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group">
                           <span className="text-xl font-bold mb-1 group-hover:text-white">
                             Standard Match
                           </span>
@@ -1924,8 +1915,7 @@ export default function CardGameArena() {
                         <Button
                           onClick={() => handleChallengeSelection(true)}
                           variant="outline"
-                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
-                        >
+                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group">
                           <span className="text-xl font-bold mb-1 group-hover:text-white">
                             Endless Challenge
                           </span>
@@ -1947,8 +1937,7 @@ export default function CardGameArena() {
                             }))
                           }
                           variant="ghost"
-                          className="text-white/70 hover:text-foreground mt-2"
-                        >
+                          className="text-white/70 hover:text-foreground mt-2">
                           Back to Mode Selection
                         </Button>
                       </div>
@@ -1963,8 +1952,7 @@ export default function CardGameArena() {
                               key={mode.id}
                               onClick={() => handleModeSelection(mode)}
                               variant="outline"
-                              className="flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
-                            >
+                              className="flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group">
                               <span className="text-xl font-bold mb-1 group-hover:text-white">
                                 {mode.name}
                               </span>
@@ -1977,8 +1965,7 @@ export default function CardGameArena() {
                         <Button
                           onClick={openAchievements}
                           variant="ghost"
-                          className="text-white/70 hover:text-foreground mt-4 flex items-center gap-2"
-                        >
+                          className="text-white/70 hover:text-foreground mt-4 flex items-center gap-2">
                           <Trophy className="h-5 w-5 text-yellow-400" />
                           View Achievements
                         </Button>
@@ -2024,7 +2011,7 @@ export default function CardGameArena() {
                                       index === 0 &&
                                         "ring-1 sm:ring-2 ring-yellow-400 border-yellow-400",
                                       index !== 0 &&
-                                        "ring-1 ring-blue-400 border-blue-400",
+                                        "ring-1 ring-blue-400 border-blue-400"
                                     )}
                                   />
                                   <Button
@@ -2033,8 +2020,7 @@ export default function CardGameArena() {
                                     className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:h-6 rounded-full text-white bg-red-600 hover:bg-red-700 text-xs flex items-center justify-center"
                                     onClick={() =>
                                       handleRemoveSelectedCreature(index)
-                                    }
-                                  >
+                                    }>
                                     <span className="text-white text-xs sm:text-sm leading-none">
                                       ✕
                                     </span>
@@ -2043,7 +2029,7 @@ export default function CardGameArena() {
                                     </span>
                                   </Button>
                                 </div>
-                              ),
+                              )
                             )}
                           </div>
                         ) : (
@@ -2071,9 +2057,8 @@ export default function CardGameArena() {
                                 variant="outline"
                                 className={cn(
                                   "flex flex-col items-center justify-center p-4 h-auto",
-                                  "text-black border-white/30 hover:bg-white/30 group", // Added 'group' class
-                                )}
-                              >
+                                  "text-black border-white/30 hover:bg-white/30 group" // Added 'group' class
+                                )}>
                                 <span className="text-4xl mb-2">
                                   {ElementEmoji}
                                 </span>
@@ -2107,7 +2092,7 @@ export default function CardGameArena() {
                                     gameState.gamePhase === "creatureSelection"
                                   ) {
                                     handleFinalSet2CreatureSelection(
-                                      creature.id,
+                                      creature.id
                                     );
                                   } else {
                                     handleCardDetailView(creature);
@@ -2128,8 +2113,7 @@ export default function CardGameArena() {
                               }))
                             }
                             variant="outline"
-                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-foreground"
-                          >
+                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-foreground">
                             Back to Element Selection
                           </Button>
                         </div>
@@ -2149,7 +2133,7 @@ export default function CardGameArena() {
                                   .filter((creature) => {
                                     const isAlreadySelectedById =
                                       gameState.playerSelectedCreatureIds.includes(
-                                        creature.id,
+                                        creature.id
                                       );
                                     return (
                                       creature.element ===
@@ -2186,8 +2170,7 @@ export default function CardGameArena() {
                               }))
                             }
                             variant="outline"
-                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-foreground"
-                          >
+                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-foreground">
                             Back to Element Selection
                           </Button>
                         </div>
@@ -2201,8 +2184,7 @@ export default function CardGameArena() {
                           gameState.playerSelectedCreatureIds.length !==
                           (gameState.selectedGameMode?.playerCreatureCount || 3)
                         }
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
+                        className="bg-green-600 hover:bg-green-700 text-white">
                         Confirm Roster
                       </Button>
                     )}
@@ -2284,8 +2266,7 @@ export default function CardGameArena() {
 
                     <Button
                       onClick={proceedFromInstructions}
-                      className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105 mt-4"
-                    >
+                      className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105 mt-4">
                       {gameState.selectedGameMode?.id === "set-2"
                         ? "Begin Full Power Battle"
                         : "Begin Evolution Clash"}
@@ -2299,17 +2280,15 @@ export default function CardGameArena() {
                       <div
                         className={cn(
                           "text-8xl sm:text-9xl drop-shadow-2xl",
-                          !gameState.coinFlipResult && "animate-coin-flip",
-                        )}
-                      >
+                          !gameState.coinFlipResult && "animate-coin-flip"
+                        )}>
                         🪙
                       </div>
                       <div
                         className={cn(
                           "absolute inset-0 text-8xl sm:text-9xl opacity-30",
-                          !gameState.coinFlipResult && "animate-coin-bounce",
-                        )}
-                      >
+                          !gameState.coinFlipResult && "animate-coin-bounce"
+                        )}>
                         ✨
                       </div>
                     </div>
@@ -2402,7 +2381,7 @@ export default function CardGameArena() {
                       gameState.turn === "player"
                     ) {
                       addToLog(
-                        "You cannot interact with your active creature directly.",
+                        "You cannot interact with your active creature directly."
                       );
                     }
                   }}
@@ -2411,13 +2390,12 @@ export default function CardGameArena() {
                 {playerActiveCreature &&
                   gameState.damageAnimations
                     .filter(
-                      (anim) => anim.creatureId === playerActiveCreature.id,
+                      (anim) => anim.creatureId === playerActiveCreature.id
                     )
                     .map((anim) => (
                       <div
                         key={anim.timestamp}
-                        className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
-                      >
+                        className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
                         <div className="text-red-500 font-bold text-3xl sm:text-4xl md:text-5xl animate-damage-float drop-shadow-lg">
                           -{anim.damage}
                         </div>
@@ -2450,7 +2428,7 @@ export default function CardGameArena() {
                             handleTagOut("player", creature);
                           } else if (creature.currentHp <= 0) {
                             addToLog(
-                              "This creature is knocked out and cannot be tagged in.",
+                              "This creature is knocked out and cannot be tagged in."
                             );
                           } else if (gameState.gamePhase !== "inGame") {
                             addToLog("The game hasn't started yet.");
@@ -2458,11 +2436,11 @@ export default function CardGameArena() {
                             addToLog("It's not your turn.");
                           } else if (gameState.isTaggingOut) {
                             addToLog(
-                              "Click a benched creature to tag out with it.",
+                              "Click a benched creature to tag out with it."
                             );
                           } else if (gameState.replacementPhaseForPlayer) {
                             addToLog(
-                              "You must select a replacement for your knocked out creature.",
+                              "You must select a replacement for your knocked out creature."
                             );
                           }
                         }}
@@ -2473,8 +2451,7 @@ export default function CardGameArena() {
                         .map((anim) => (
                           <div
                             key={anim.timestamp}
-                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
-                          >
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
                             <div className="text-red-500 font-bold text-2xl sm:text-3xl md:text-4xl animate-damage-float drop-shadow-lg">
                               -{anim.damage}
                             </div>
@@ -2492,19 +2469,15 @@ export default function CardGameArena() {
           <div
             className={cn(
               "fixed inset-0 flex flex-col items-center justify-center z-[100] transition-all duration-500",
-              gameState.winner === "opponent"
-                ? "bg-black/70"
-                : "bg-blue-900/70",
-            )}
-          >
+              gameState.winner === "opponent" ? "bg-black/70" : "bg-blue-900/70"
+            )}>
             <h2
               className={cn(
                 "text-6xl sm:text-8xl font-extrabold text-white text-center drop-shadow-lg",
                 gameState.winner === "player"
                   ? "text-green-600"
-                  : "text-red-600",
-              )}
-            >
+                  : "text-red-600"
+              )}>
               {gameState.winner === "player" ? "You Win!" : "You Lose!"}
             </h2>
             {gameState.isEndlessModeActive &&
@@ -2526,9 +2499,8 @@ export default function CardGameArena() {
                   "text-white font-semibold shadow-2xl border-2 border-green-500/50",
                   "transition-all duration-200 hover:scale-105 hover:shadow-green-500/25",
                   "text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3",
-                  "z-[101]",
-                )}
-              >
+                  "z-[101]"
+                )}>
                 Restart
               </Button>
               <Button
@@ -2539,9 +2511,8 @@ export default function CardGameArena() {
                   "text-white font-semibold shadow-2xl border-2 border-green-500/50",
                   "transition-all duration-200 hover:scale-105 hover:shadow-green-500/25",
                   "text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3",
-                  "z-[101]",
-                )}
-              >
+                  "z-[101]"
+                )}>
                 Back to Menu
               </Button>
             </div>
@@ -2556,8 +2527,7 @@ export default function CardGameArena() {
               <Button
                 onClick={closeCardDetails}
                 size="icon"
-                className="absolute top-4 right-4 z-[201] w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg transition-all duration-200 hover:scale-105"
-              >
+                className="absolute top-4 right-4 z-[201] w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg transition-all duration-200 hover:scale-105">
                 <span className="text-xl text-black">✕</span>
                 <span className="sr-only">Close Card Details</span>
               </Button>
@@ -2624,8 +2594,7 @@ export default function CardGameArena() {
                                   gameState.selectedCardForDetails.maxHp) *
                                 100
                               }%`,
-                            }}
-                          ></div>
+                            }}></div>
                         </div>
                       </div>
                     </div>
@@ -2724,17 +2693,14 @@ export default function CardGameArena() {
         {gameState.isAchievementsOpen && (
           <div
             className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in-0"
-            onClick={closeAchievements}
-          >
+            onClick={closeAchievements}>
             <div
               className="relative w-full max-w-md bg-gray-900/70 border border-white/20 rounded-xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95"
-              onClick={(e) => e.stopPropagation()}
-            >
+              onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={closeAchievements}
                 className="absolute -top-3 -right-3 z-10 w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg border-2 border-white/50"
-                title="Close"
-              >
+                title="Close">
                 <span className="text-xl font-bold">✕</span>
               </button>
               <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-6 flex items-center justify-center gap-3">
@@ -2756,8 +2722,7 @@ export default function CardGameArena() {
                     {gameModes.map((mode) => (
                       <tr
                         key={mode.id}
-                        className="border-b border-white/10 last:border-b-0"
-                      >
+                        className="border-b border-white/10 last:border-b-0">
                         <td className="py-3 sm:py-4 text-base sm:text-lg font-semibold">
                           {mode.name}
                         </td>
@@ -2796,8 +2761,7 @@ export default function CardGameArena() {
                     gameState.turn !== "player"
                   }
                   variant="default"
-                  className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md"
-                >
+                  className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md">
                   Tag
                 </Button>
               )}
@@ -2809,8 +2773,7 @@ export default function CardGameArena() {
                   gameState.turn !== "player"
                 }
                 variant="default"
-                className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md"
-              >
+                className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md">
                 Roll
               </Button>
               {gameState.selectedGameMode?.id === "set-3" && (
@@ -2822,8 +2785,7 @@ export default function CardGameArena() {
                     gameState.turn !== "player"
                   }
                   variant="default"
-                  className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md"
-                >
+                  className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md">
                   Evolve
                 </Button>
               )}
