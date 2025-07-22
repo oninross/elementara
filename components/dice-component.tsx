@@ -68,10 +68,12 @@ export default function DiceComponent({
           <div className="absolute inset-0 bg-purple-500/30 rounded-lg blur-md animate-pulse"></div>
           <div
             className="absolute inset-0 bg-purple-400/20 rounded-lg blur-lg animate-pulse"
-            style={{ animationDelay: "0.5s" }}></div>
+            style={{ animationDelay: "0.5s" }}
+          ></div>
           <div
             className="absolute inset-0 bg-purple-600/40 rounded-lg blur-sm animate-pulse"
-            style={{ animationDelay: "1s" }}></div>
+            style={{ animationDelay: "1s" }}
+          ></div>
         </div>
       )}
 
@@ -81,7 +83,7 @@ export default function DiceComponent({
           showCorruptionEffects
             ? "bg-black text-white border-2 border-purple-500 shadow-purple-500/50"
             : "bg-white text-black",
-          isRolling && "animate-[dice-flip-animation_0.5s_ease-out_forwards]"
+          isRolling && "animate-[dice-flip-animation_0.5s_ease-out_forwards]",
         )}
         style={{
           transformStyle: "preserve-3d",
@@ -89,13 +91,15 @@ export default function DiceComponent({
           boxShadow: showCorruptionEffects
             ? "0 0 20px rgba(168, 85, 247, 0.5), 0 0 40px rgba(168, 85, 247, 0.3)"
             : undefined,
-        }}>
+        }}
+      >
         {isRolling ? (
           <span
             className={cn(
               "absolute inset-0 flex items-center justify-center text-4xl",
-              showCorruptionEffects ? "text-purple-300" : "text-gray-400"
-            )}>
+              showCorruptionEffects ? "text-purple-300" : "text-gray-400",
+            )}
+          >
             🎲
           </span>
         ) : (
@@ -110,17 +114,20 @@ export default function DiceComponent({
             </div>
             <div
               className="absolute top-1 right-1 text-purple-400 text-xs animate-pulse"
-              style={{ animationDelay: "0.3s" }}>
+              style={{ animationDelay: "0.3s" }}
+            >
               ✨
             </div>
             <div
               className="absolute bottom-1 left-1 text-purple-400 text-xs animate-pulse"
-              style={{ animationDelay: "0.6s" }}>
+              style={{ animationDelay: "0.6s" }}
+            >
               ⚡
             </div>
             <div
               className="absolute bottom-1 right-1 text-purple-400 text-xs animate-pulse"
-              style={{ animationDelay: "0.9s" }}>
+              style={{ animationDelay: "0.9s" }}
+            >
               🔮
             </div>
           </div>

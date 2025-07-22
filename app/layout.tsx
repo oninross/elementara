@@ -1,7 +1,7 @@
-import type React from "react"
-import type { Metadata } from "next"
-import "./globals.css"
-import DisableSW from "@/components/disable-sw"
+import type React from "react";
+import type { Metadata } from "next";
+import "./globals.css";
+import DisableSW from "@/components/disable-sw";
 
 export const metadata: Metadata = {
   title: "Elementara Card Game",
@@ -20,16 +20,16 @@ export const metadata: Metadata = {
   icons: {
     apple: "/icons/apple-touch-icon.png", // Apple touch icon
   },
-}
+};
 
-import { Inter } from "next/font/google"
+import { Inter } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -38,5 +38,5 @@ export default function RootLayout({
         {children}
       </body>
     </html>
-  )
+  );
 }

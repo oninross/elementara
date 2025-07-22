@@ -36,7 +36,7 @@ export const saveWinTally = (tally: number) => {
 export const handleWin = (
   currentGameState: GameState,
   playerCreatures: Creature[],
-  selectedGameMode: GameMode
+  selectedGameMode: GameMode,
 ): GameState => {
   const newWinTally = currentGameState.winTally + 1;
   saveWinTally(newWinTally);
@@ -63,7 +63,7 @@ export const handleWin = (
       ? Math.floor(deEvolvedCreature.maxHp * 0.5) // KO'd return at 50%
       : Math.max(
           deEvolvedCreature.currentHp,
-          Math.floor(deEvolvedCreature.maxHp * 0.75)
+          Math.floor(deEvolvedCreature.maxHp * 0.75),
         ); // Active healed to 75% (or current if higher)
 
     return {
@@ -98,7 +98,7 @@ export const handleLoss = (currentGameState: GameState): GameState => {
 // Function to generate opponent creatures based on win tally
 export const generateOpponentCreatures = (
   winCount: number,
-  gameMode: GameMode
+  gameMode: GameMode,
 ): Creature[] => {
   const opponentCreatureIds: string[] = [];
   let creaturesForOpponentSelection: Creature[] = [];
@@ -138,7 +138,7 @@ export const generateOpponentCreatures = (
         template.resistance,
         template.ability,
         template.stage,
-        template.evolutionLine
+        template.evolutionLine,
       ),
       isFaceUp: true,
       // You might want to add a property to Creature to store AI damage buff

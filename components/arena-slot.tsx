@@ -1,23 +1,23 @@
-"use client"
+"use client";
 
-import { Card, CardContent } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
-import type { Creature } from "@/lib/creatures"
-import { CreatureCard } from "@/components/creature-card"
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import type { Creature } from "@/lib/creatures";
+import { CreatureCard } from "@/components/creature-card";
 
 interface ArenaSlotProps {
-  label: string
-  isActive?: boolean
-  isOpponent?: boolean
-  creature: Creature | null
-  onSlotClick?: (creature: Creature | null) => void
-  className?: string
-  isAttacking?: boolean
-  isShaking?: boolean
-  isDefending?: boolean
-  isDamaged?: boolean
-  isCorrupted?: boolean
-  gameMode?: string // Add gameMode prop
+  label: string;
+  isActive?: boolean;
+  isOpponent?: boolean;
+  creature: Creature | null;
+  onSlotClick?: (creature: Creature | null) => void;
+  className?: string;
+  isAttacking?: boolean;
+  isShaking?: boolean;
+  isDefending?: boolean;
+  isDamaged?: boolean;
+  isCorrupted?: boolean;
+  gameMode?: string; // Add gameMode prop
 }
 
 const ArenaSlot = ({
@@ -44,9 +44,13 @@ const ArenaSlot = ({
         // Defending player receiving damage - red border (only when shaking)
         isDefending && isShaking && "border-red-500 ring-2 ring-red-500/50",
         // Active player's turn - yellow border (if not currently defending and shaking)
-        isActive && !isDefending && "border-yellow-400 ring-2 ring-yellow-400/50",
+        isActive &&
+          !isDefending &&
+          "border-yellow-400 ring-2 ring-yellow-400/50",
         // Default state for other slots - dark gray border
-        (!isActive && !isDefending) || (isActive && isDefending && !isShaking) ? "border-gray-700" : "",
+        (!isActive && !isDefending) || (isActive && isDefending && !isShaking)
+          ? "border-gray-700"
+          : "",
         className,
       )}
       onClick={() => onSlotClick?.(creature)}
@@ -73,7 +77,7 @@ const ArenaSlot = ({
         )}
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default ArenaSlot
+export default ArenaSlot;

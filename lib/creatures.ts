@@ -26,7 +26,7 @@ export const createCreature = (
   resistance: Element | null,
   ability: string,
   stage: CreatureStage,
-  evolutionLine: string[]
+  evolutionLine: string[],
 ): Creature => ({
   id,
   name,
@@ -426,8 +426,8 @@ rawRosterData.forEach((lineData) => {
         mapElementOrNull(rawCreature.resistance),
         `${rawCreature.name}'s ${lineData.element} Burst`,
         mapStage(rawCreature.stage),
-        evolutionLineIds // Assign the full evolution line IDs
-      )
+        evolutionLineIds, // Assign the full evolution line IDs
+      ),
     );
   });
 });

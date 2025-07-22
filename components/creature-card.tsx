@@ -188,10 +188,11 @@ export const CreatureCard = ({
             ? "border-gray-700"
             : "",
           isDamaged && "animate-pulse-damage",
-          className
+          className,
         )}
         onClick={handleClick}
-        onDoubleClick={handleDoubleClick}>
+        onDoubleClick={handleDoubleClick}
+      >
         <CardContent className="p-0 text-white/70 text-xs sm:text-sm font-bold flex items-center justify-center h-full">
           <span className="sr-only">Face down card</span>
         </CardContent>
@@ -231,7 +232,7 @@ export const CreatureCard = ({
           isAttacking && "animate-attack-animation",
           isShaking && "animate-shake-animation",
           isDamaged && "animate-pulse-damage",
-          className
+          className,
         )}
         style={{
           boxShadow: showCorruptionEffects
@@ -239,7 +240,8 @@ export const CreatureCard = ({
             : undefined,
         }}
         onClick={handleClick}
-        onDoubleClick={handleDoubleClick}>
+        onDoubleClick={handleDoubleClick}
+      >
         {/* Background overlay for better text readability on small cards */}
         <div className="absolute inset-0 bg-black/40 rounded z-[1]" />
 
@@ -249,14 +251,16 @@ export const CreatureCard = ({
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-transparent to-purple-600/20 rounded z-[2] animate-pulse"></div>
             <div
               className="absolute inset-0 bg-gradient-to-tl from-purple-400/15 via-purple-500/10 to-transparent rounded z-[2] animate-pulse"
-              style={{ animationDelay: "0.5s" }}></div>
+              style={{ animationDelay: "0.5s" }}
+            ></div>
             <div className="absolute top-0 left-0 w-full h-full rounded z-[2]">
               <div className="absolute top-1 right-1 text-purple-400 text-xs animate-pulse">
                 🌀
               </div>
               <div
                 className="absolute bottom-1 left-1 text-purple-400 text-xs animate-pulse"
-                style={{ animationDelay: "0.7s" }}>
+                style={{ animationDelay: "0.7s" }}
+              >
                 ✨
               </div>
             </div>
@@ -267,7 +271,8 @@ export const CreatureCard = ({
         <button
           onClick={handleInfoClick}
           className="absolute top-1 right-1 z-10 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
-          title="View card details">
+          title="View card details"
+        >
           <Info className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3" />
         </button>
 
@@ -285,7 +290,7 @@ export const CreatureCard = ({
             <div
               className={cn(
                 "w-full h-full",
-                elementBackgroundImages[creature.element]
+                elementBackgroundImages[creature.element],
               )}
             />
           )}
@@ -297,8 +302,9 @@ export const CreatureCard = ({
             "absolute bottom-10 left-2 right-2 z-[6]",
             elementTextColors[creature.element],
             elementTextShadows[creature.element],
-            "font-extrabold"
-          )}>
+            "font-extrabold",
+          )}
+        >
           <div className="flex justify-between items-baseline w-full px-0">
             <div className="flex-1 min-w-0 mr-2">
               <div className="text-[9px] sm:text-[10px] md:text-xs font-extrabold truncate leading-tight tracking-wide">
@@ -322,9 +328,9 @@ export const CreatureCard = ({
                 hpPercentage > 60
                   ? "bg-green-500"
                   : hpPercentage > 30
-                  ? "bg-yellow-500"
-                  : "bg-red-500",
-                "shadow-sm"
+                    ? "bg-yellow-500"
+                    : "bg-red-500",
+                "shadow-sm",
               )}
               style={{ width: `${hpPercentage}%` }}
             />
@@ -336,8 +342,9 @@ export const CreatureCard = ({
           className={cn(
             "absolute bottom-2 left-2 right-2 z-[6]",
             elementTextColors[creature.element],
-            elementTextShadows[creature.element]
-          )}>
+            elementTextShadows[creature.element],
+          )}
+        >
           <div className="text-center">
             <div className="text-[8px] sm:text-[9px] md:text-[10px] font-extrabold tracking-wide whitespace-nowrap">
               {creature.currentHp}/{creature.maxHp}
@@ -358,14 +365,17 @@ export const CreatureCard = ({
       {isShowingDetails && (
         <div
           className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in-0"
-          onClick={handleCloseDetails}>
+          onClick={handleCloseDetails}
+        >
           <div
             className="relative w-full max-w-[22rem] sm:max-w-sm animate-card-flip-and-scale"
-            onClick={(e) => e.stopPropagation()}>
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={handleCloseDetails}
               className="absolute -top-4 -right-4 z-10 w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg border-2 border-white/50"
-              title="Close details">
+              title="Close details"
+            >
               <span className="text-xl font-bold">✕</span>
             </button>
 
@@ -396,12 +406,14 @@ export const CreatureCard = ({
               <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-5 text-white">
                 <h2
                   className="text-3xl sm:text-4xl font-black tracking-wider uppercase"
-                  style={{ textShadow: "2px 2px 8px rgba(0,0,0,0.8)" }}>
+                  style={{ textShadow: "2px 2px 8px rgba(0,0,0,0.8)" }}
+                >
                   {creature.name}
                 </h2>
                 <p
                   className="text-sm text-gray-300 mt-1 font-medium"
-                  style={{ textShadow: "1px 1px 4px rgba(0,0,0,0.7)" }}>
+                  style={{ textShadow: "1px 1px 4px rgba(0,0,0,0.7)" }}
+                >
                   {creature.stage.replace("Level", "Stage")}
                   {creature.stage === "Level 3"
                     ? " (Final Evolution)"
