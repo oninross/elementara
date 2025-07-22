@@ -13,7 +13,7 @@ interface CreatureCardProps {
   creature: Creature;
   isFaceDown?: boolean;
   isActive?: boolean;
-  isOpponent?: boolean;
+  // isOpponent?: boolean;
   onClick?: (creature: Creature) => void;
   onDetailView?: (creature: Creature) => void;
   className?: string;
@@ -64,12 +64,12 @@ const elementTextShadows: Record<Element, string> = {
   Air: "drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] [text-shadow:_1px_1px_2px_rgb(0_0_0_/_80%)]",
 };
 
-const elementDetailBackgroundImages: Record<Element, string> = {
-  Fire: "/images/backgrounds/fire-bg.jpeg",
-  Water: "/images/backgrounds/water-bg.jpeg",
-  Earth: "/images/backgrounds/earth-bg.jpeg",
-  Air: "/images/backgrounds/air-bg.jpeg",
-};
+// const elementDetailBackgroundImages: Record<Element, string> = {
+//   Fire: "/images/backgrounds/fire-bg.jpeg",
+//   Water: "/images/backgrounds/water-bg.jpeg",
+//   Earth: "/images/backgrounds/earth-bg.jpeg",
+//   Air: "/images/backgrounds/air-bg.jpeg",
+// };
 
 const elementEmojis: Record<Element, string> = {
   Fire: "🔥",
@@ -128,7 +128,7 @@ export const CreatureCard = ({
   creature,
   isFaceDown = false,
   isActive = false,
-  isOpponent = false,
+  // isOpponent = false,
   onClick,
   onDetailView,
   className,
