@@ -15,7 +15,7 @@ import {
 import ArenaSlot from "@/components/arena-slot";
 import { CreatureCard } from "@/components/creature-card";
 import DiceComponent from "@/components/dice-component";
-import { RotateCcw, Trophy } from "lucide-react";
+import { RotateCcw, Trophy, Menu } from "lucide-react";
 import {
   loadWinTally,
   saveWinTally,
@@ -181,6 +181,8 @@ const initialGameProgressState = {
 };
 
 export default function CardGameArena() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   //@ts-ignore
   const [gameState, setGameState] = useState<GameState>(() => {
     const initialWins = loadWinTally();
@@ -1782,18 +1784,42 @@ export default function CardGameArena() {
           </div>
         )}
 
-        {/* Top-right Restart Button - only show after game mode selection */}
-        {gameState.selectedGameMode && !gameState.isGameOver && (
-          <div className="fixed top-4 right-4 z-50">
-            <Button
-              onClick={restartGame}
-              size="icon"
-              className="w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg transition-all duration-200 hover:scale-105 hover:text-white">
-              <RotateCcw className="h-5 w-5 text-black" />
-              <span className="sr-only">Restart Game</span>
-            </Button>
-          </div>
-        )}
+        {/* Hamburger Menu - Top Right */}
+        <div className="fixed top-4 right-4 z-50">
+          <button
+            onClick={() => setMenuOpen((open) => !open)}
+            className="w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
+            aria-label="Open menu">
+            <Menu className="h-6 w-6" />
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg flex flex-col p-4 gap-4 z-50">
+              {/* <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  // Open How To Play modal or navigate
+                  setGameState((prev) => ({
+                    ...prev,
+                    isAchievementsOpen: true,
+                  })); // Replace with your How To Play logic
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition">
+                How To Play
+              </button> */}
+
+              {gameState.selectedGameMode && !gameState.isGameOver && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleBackToMenu(); // Call your back to menu handler
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition">
+                  Back to Main Menu
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col items-center gap-4">
