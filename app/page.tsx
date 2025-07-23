@@ -220,7 +220,7 @@ export default function CardGameArena() {
   const addDamageAnimation = useCallback(
     (creatureId: string, damage: number) => {
       const newAnimation: DamageAnimation = {
-        creatureId,
+        creatureId: creatureId,
         damage,
         timestamp: Date.now(),
       };
@@ -443,7 +443,7 @@ export default function CardGameArena() {
       finalDamage = Math.max(0, finalDamage);
 
       // Add damage animation for the defender
-      addDamageAnimation(defender.id, finalDamage);
+      addDamageAnimation(defender.instanceId, finalDamage); // <-- use instanceId
 
       setGameState((prev) => {
         const updatedPlayer = { ...prev.player };
@@ -1807,7 +1807,13 @@ export default function CardGameArena() {
                         isOpponent
                         creature={creature}
                         isActive={false}
-                        isDamaged={gameState.damagedCreatures.has(creature.id)}
+                        isDamaged={
+                          playerActiveCreature
+                            ? gameState.damagedCreatures.has(
+                                playerActiveCreature.instanceId
+                              )
+                            : false
+                        }
                         gameMode={gameState.selectedGameMode?.id}
                         onSlotClick={() => {
                           if (
@@ -1850,9 +1856,9 @@ export default function CardGameArena() {
                   isShaking={gameState.opponentActiveIsShaking}
                   isDefending={gameState.opponentActiveIsDefending}
                   isDamaged={
-                    opponentActiveCreature
+                    playerActiveCreature
                       ? gameState.damagedCreatures.has(
-                          opponentActiveCreature.id
+                          playerActiveCreature.instanceId
                         )
                       : false
                   }
@@ -2367,7 +2373,9 @@ export default function CardGameArena() {
                   isDefending={gameState.playerActiveIsDefending}
                   isDamaged={
                     playerActiveCreature
-                      ? gameState.damagedCreatures.has(playerActiveCreature.id)
+                      ? gameState.damagedCreatures.has(
+                          playerActiveCreature.instanceId
+                        )
                       : false
                   }
                   isCorrupted={
@@ -2390,7 +2398,8 @@ export default function CardGameArena() {
                 {playerActiveCreature &&
                   gameState.damageAnimations
                     .filter(
-                      (anim) => anim.creatureId === playerActiveCreature.id
+                      (anim) =>
+                        anim.creatureId === playerActiveCreature.instanceId
                     )
                     .map((anim) => (
                       <div
@@ -2416,7 +2425,13 @@ export default function CardGameArena() {
                         isActive={
                           gameState.turn === "player" && gameState.isTaggingOut
                         }
-                        isDamaged={gameState.damagedCreatures.has(creature.id)}
+                        isDamaged={
+                          playerActiveCreature
+                            ? gameState.damagedCreatures.has(
+                                playerActiveCreature.instanceId
+                              )
+                            : false
+                        }
                         gameMode={gameState.selectedGameMode?.id}
                         onSlotClick={() => {
                           if (

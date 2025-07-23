@@ -3,6 +3,7 @@ export type CreatureStage = "Level 1" | "Level 2" | "Level 3";
 
 export interface Creature {
   id: string;
+  instanceId: string;
   name: string;
   element: Element;
   maxHp: number;
@@ -26,9 +27,10 @@ export const createCreature = (
   resistance: Element | null,
   ability: string,
   stage: CreatureStage,
-  evolutionLine: string[],
+  evolutionLine: string[]
 ): Creature => ({
   id,
+  instanceId: crypto.randomUUID(),
   name,
   element,
   maxHp,
@@ -426,8 +428,8 @@ rawRosterData.forEach((lineData) => {
         mapElementOrNull(rawCreature.resistance),
         `${rawCreature.name}'s ${lineData.element} Burst`,
         mapStage(rawCreature.stage),
-        evolutionLineIds, // Assign the full evolution line IDs
-      ),
+        evolutionLineIds // Assign the full evolution line IDs
+      )
     );
   });
 });
