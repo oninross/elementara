@@ -89,6 +89,7 @@ interface GameState {
   damagedCreatures: Set<string>;
   selectedCardForDetails: Creature | null;
   isCardDetailsOpen: boolean;
+  finalEndlessScore?: number;
 
   // Corrupted Die mechanic
   lastDieRoll: number | null;
@@ -590,6 +591,7 @@ export default function CardGameArena() {
         winner: "opponent",
         gamePhase: "gameOver",
         endlessTrophies: newTrophies,
+        finalEndlessScore: currentWins, // Store the score BEFORE resetting
         endlessWins: resetWinTally, // Reset win tally in state
         aiDifficulty: resetAiDifficulty, // Reset AI difficulty in state
       };
@@ -1828,7 +1830,9 @@ export default function CardGameArena() {
                       />
                       {/* Enhanced Damage Animation for Opponent Bench */}
                       {gameState.damageAnimations
-                        .filter((anim) => anim.creatureId === creature.id)
+                        .filter(
+                          (anim) => anim.creatureId === creature.instanceId
+                        )
                         .map((anim) => (
                           <div
                             key={anim.timestamp}
@@ -2462,7 +2466,9 @@ export default function CardGameArena() {
                       />
                       {/* Enhanced Damage Animation for Player Bench */}
                       {gameState.damageAnimations
-                        .filter((anim) => anim.creatureId === creature.id)
+                        .filter(
+                          (anim) => anim.creatureId === creature.instanceId
+                        )
                         .map((anim) => (
                           <div
                             key={anim.timestamp}
@@ -2500,7 +2506,7 @@ export default function CardGameArena() {
                 <p className="text-2xl sm:text-3xl text-white mt-4">
                   Final Score:{" "}
                   <span className="font-bold text-yellow-400">
-                    {gameState.endlessWins}
+                    {gameState.finalEndlessScore ?? gameState.endlessWins}
                   </span>{" "}
                   wins
                 </p>
