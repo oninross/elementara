@@ -113,15 +113,6 @@ interface GameState {
 
 const gameModes: GameMode[] = [
   {
-    id: "set-2",
-    name: "Full Power Duel",
-    description: "Full cards with stats, no evolution.",
-    playerCreatureCount: 1,
-    evolutionTurnsRequired: Number.POSITIVE_INFINITY,
-    allowEvolution: false,
-    startingHp: 80, // This will be overridden by creature's actual HP
-  },
-  {
     id: "set-3",
     name: "Evolution Clash",
     description: "Full evolution lines, tags, evolution buffs.",
@@ -129,6 +120,15 @@ const gameModes: GameMode[] = [
     evolutionTurnsRequired: 2,
     allowEvolution: true,
     startingHp: 50,
+  },
+  {
+    id: "set-2",
+    name: "Full Power Duel",
+    description: "Full cards with stats, no evolution.",
+    playerCreatureCount: 1,
+    evolutionTurnsRequired: Number.POSITIVE_INFINITY,
+    allowEvolution: false,
+    startingHp: 80, // This will be overridden by creature's actual HP
   },
 ];
 
@@ -2047,7 +2047,7 @@ export default function CardGameArena() {
                         <h5 className="text-white text-md font-semibold">
                           Select an Element:
                         </h5>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-3 md:gap-4">
+                        <div className="grid grid-cols-4 gap-4">
                           {elementalTypes.map((element) => {
                             const ElementEmoji = elementEmojis[element];
                             return (
@@ -2082,7 +2082,7 @@ export default function CardGameArena() {
                             Choose your Level 3{" "}
                             {gameState.currentElementSelection} Creature:
                           </h5>
-                          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                          <div className="grid grid-cols-3 gap-4">
                             {gameState.creaturesToChooseFrom.map((creature) => (
                               <CreatureCard
                                 key={creature.id}
@@ -2127,7 +2127,7 @@ export default function CardGameArena() {
                             Choose a {gameState.currentElementSelection}{" "}
                             Creature:
                           </h5>
-                          <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+                          <div className="grid grid-cols-3 gap-4">
                             {gameState.currentElementSelection
                               ? getAllBasicCreatures()
                                   .filter((creature) => {
