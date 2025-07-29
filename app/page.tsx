@@ -15,7 +15,7 @@ import {
 import ArenaSlot from "@/components/arena-slot";
 import { CreatureCard } from "@/components/creature-card";
 import DiceComponent from "@/components/dice-component";
-import { RotateCcw, Trophy, Menu } from "lucide-react";
+import { RotateCcw, Trophy, Menu, Cross, CrossIcon, X } from "lucide-react";
 import {
   loadWinTally,
   saveWinTally,
@@ -1792,7 +1792,11 @@ export default function CardGameArena() {
               onClick={() => setMenuOpen((open) => !open)}
               className="w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
               aria-label="Open menu">
-              <Menu className="h-6 w-6" />
+              {menuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
             {menuOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg flex flex-col p-4 gap-4 z-50">
@@ -1864,7 +1868,7 @@ export default function CardGameArena() {
                         )
                         .map((anim) => (
                           <div
-                            key={anim.timestamp}
+                            key={`${anim.creatureId}-${anim.timestamp}`} // <-- fix: unique key
                             className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
                             <div className="text-red-500 font-bold text-2xl sm:text-3xl md:text-4xl animate-damage-float drop-shadow-lg">
                               -{anim.damage}
@@ -2852,7 +2856,7 @@ export default function CardGameArena() {
               Your spirit has been shattered! Summon a new guardian to the
               arena:
             </h4>
-            <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 grid-cols-2 gap-2">
               {gameState.player.benchCreatures
                 .filter((c) => c.currentHp > 0)
                 .map((creature) => (
