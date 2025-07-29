@@ -481,25 +481,49 @@ export default function CardGameArena() {
         const updatedPlayer = { ...prev.player };
         const updatedOpponent = { ...prev.opponent };
 
+        // Apply damage to the correct active creature (player or opponent)
         if (
           prev.player.activeCreature &&
-          prev.player.activeCreature === defender
+          prev.player.activeCreature.instanceId === defender.instanceId
         ) {
           updatedPlayer.activeCreature = {
-            ...defender,
-            currentHp: Math.max(0, defender.currentHp - finalDamage),
+            ...prev.player.activeCreature,
+            currentHp: Math.max(
+              0,
+              prev.player.activeCreature.currentHp - finalDamage
+            ),
           };
         } else if (
           prev.opponent.activeCreature &&
-          prev.opponent.activeCreature === defender
+          prev.opponent.activeCreature.instanceId === defender.instanceId
         ) {
           updatedOpponent.activeCreature = {
-            ...defender,
-            currentHp: Math.max(0, defender.currentHp - finalDamage),
+            ...prev.opponent.activeCreature,
+            currentHp: Math.max(
+              0,
+              prev.opponent.activeCreature.currentHp - finalDamage
+            ),
           };
         }
 
-        return { ...prev, player: updatedPlayer, opponent: updatedOpponent };
+        // Also update bench creatures if needed
+        updatedPlayer.benchCreatures = updatedPlayer.benchCreatures.map((c) =>
+          c.instanceId === defender.instanceId
+            ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) }
+            : c
+        );
+        updatedOpponent.benchCreatures = updatedOpponent.benchCreatures.map(
+          (c) =>
+            c.instanceId === defender.instanceId
+              ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) }
+              : c
+        );
+
+        return {
+          ...prev,
+          player: updatedPlayer,
+          opponent: updatedOpponent,
+        };
       });
 
       const newHp = Math.max(0, defender.currentHp - finalDamage);
