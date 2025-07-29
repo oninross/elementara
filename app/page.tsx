@@ -32,6 +32,13 @@ import {
   Wind,
   Droplet,
   Sprout,
+  Egg,
+  ChartBarBig,
+  ChartColumnBig,
+  TrophyIcon,
+  BrainCircuit,
+  Shell,
+  Origami,
 } from "lucide-react";
 import {
   loadWinTally,
@@ -2291,47 +2298,65 @@ export default function CardGameArena() {
                       <div className="text-white text-lg sm:text-xl leading-relaxed space-y-4 text-left">
                         {gameState.selectedGameMode?.id === "set-2" ? (
                           <>
-                            <p className="text-xl sm:text-2xl font-semibold mb-4">
+                            <p className="text-md font-semibold mb-4">
                               Choose one Stage 3 Elementara. Battle at peak
                               power.
                             </p>
 
-                            <p>🐉 Start with a fully evolved creature.</p>
-
-                            <p>
-                              📊 Use full HP stats, resistances, and weaknesses.
+                            <p className="flex items-center gap-4 text-sm">
+                              <Origami /> Start with a fully evolved creature.
                             </p>
 
-                            <p>🎲 Roll 1 die each turn to deal damage.</p>
-
-                            <p>
-                              🏆 First to reduce the opponent's HP to 0 wins.
+                            <p className="flex items-center gap-4 text-sm">
+                              <ChartColumnBig /> Use full HP stats, resistances,
+                              and weaknesses.
                             </p>
 
-                            <p className="text-lg sm:text-xl font-semibold mt-6">
-                              ⚡ Experience the full power of evolved
+                            <p className="flex items-center gap-4 text-sm">
+                              <Dices /> Roll 1 die each turn to deal damage.
+                            </p>
+
+                            <p className="flex items-center gap-4 text-sm">
+                              <TrophyIcon /> First to reduce the opponent's HP
+                              to 0 wins.
+                            </p>
+
+                            <p className="flex items-center gap-4 text-sm">
+                              <Zap /> Experience the full power of evolved
                               Elementara!
                             </p>
                           </>
                         ) : (
                           <>
-                            <p className="text-xl sm:text-2xl font-semibold mb-4">
+                            <p className="text-md font-semibold mb-4">
                               Choose a full evolution line. Battle through all 3
                               stages.
                             </p>
 
-                            <p>🥚 Start with your Stage 1 creature.</p>
+                            <p className="flex items-center gap-4 text-sm">
+                              <Egg /> Start with your Stage 1 creature.
+                            </p>
 
-                            <p>⚡ Evolve mid-battle to unlock buffs.</p>
+                            <p className="flex items-center gap-4 text-sm">
+                              <Zap /> Evolve mid-battle to unlock buffs.
+                            </p>
 
-                            <p>🔄 Tag between creatures at any time.</p>
+                            <p className="flex items-center gap-4 text-sm">
+                              <RefreshCw /> Tag between creatures at any time.
+                            </p>
 
-                            <p>📊 Use HP, resistances, and weaknesses.</p>
+                            <p className="flex items-center gap-4 text-sm">
+                              <ChartColumnBig /> Use HP, resistances, and
+                              weaknesses.
+                            </p>
 
-                            <p>🏆 Last creature standing wins.</p>
+                            <p className="flex items-center gap-4 text-sm">
+                              <TrophyIcon /> Last creature standing wins.
+                            </p>
 
-                            <p className="text-lg sm:text-xl font-semibold mt-6">
-                              🧠 Master the art of evolution and strategy!
+                            <p className="flex items-center gap-4 text-sm">
+                              <BrainCircuit /> Master the art of evolution and
+                              strategy!
                             </p>
                           </>
                         )}
@@ -2402,11 +2427,11 @@ export default function CardGameArena() {
                           <div className="absolute top-8 z-50 flex flex-col items-center gap-2 w-50">
                             <div className="bg-purple-900/80 backdrop-blur-sm rounded-lg px-4 py-2 border border-purple-500 w-full">
                               <div className="flex items-center gap-2">
-                                <span className="text-2xl">🌀</span>
+                                <Shell className="w-16 h-16" />
                                 <span className="text-white font-bold text-center">
                                   CORRUPTED DIE
                                 </span>
-                                <span className="text-2xl">🌀</span>
+                                <Shell className="w-16 h-16" />
                               </div>
                               {/* <div className="text-center text-purple-200 text-sm mt-1">
                                 {gameState.corruptedTurnsRemaining} turns
@@ -2983,7 +3008,7 @@ export default function CardGameArena() {
                 </ul>
 
                 <h2 className="font-bold text-xl mb-4">
-                  🌑 Corrupted Dice Mechanic
+                  <Shell /> Corrupted Dice Mechanic
                 </h2>
                 <p className="mb-8">
                   If the <strong>same die result appears twice in a row</strong>{" "}
