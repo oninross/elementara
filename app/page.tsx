@@ -1706,7 +1706,8 @@ export default function CardGameArena() {
     !gameState.isGameOver &&
     !gameState.hasRolledThisTurn &&
     !gameState.replacementPhaseForPlayer &&
-    !gameState.isTaggingOut;
+    !gameState.isTaggingOut &&
+    playerActiveCreature.stage !== "Level 3";
 
   const canPlayerTagOut =
     gameState.player.benchCreatures.some((c) => c.currentHp > 0) &&
