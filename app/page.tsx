@@ -506,8 +506,25 @@ export default function CardGameArena() {
       );
 
       // Re-distribute processed player creatures back to active/bench
-      const healedActive = processedPlayerCreatures[0] || null;
-      const healedBench = processedPlayerCreatures.slice(1);
+      let healedActive = processedPlayerCreatures[0] || null;
+      let healedBench = processedPlayerCreatures.slice(1);
+
+      // Revive KO'd creatures with 50% HP (rounded up)
+      healedBench = healedBench.map((creature) => {
+        if (creature.currentHp <= 0) {
+          return {
+            ...creature,
+            currentHp: Math.ceil(creature.maxHp * 0.5),
+          };
+        }
+        return creature;
+      });
+      if (healedActive && healedActive.currentHp <= 0) {
+        healedActive = {
+          ...healedActive,
+          currentHp: Math.ceil(healedActive.maxHp * 0.5),
+        };
+      }
 
       // Generate new opponent based on new win tally
       const newOpponentCreatures = generateOpponentCreatures(
