@@ -51,17 +51,15 @@ const ArenaSlot = ({
         (!isActive && !isDefending) || (isActive && isDefending && !isShaking)
           ? "border-gray-700"
           : "",
-        className,
+        className
       )}
-      onClick={() => onSlotClick?.(creature)}
-    >
+      onClick={() => onSlotClick?.(creature)}>
       <CardContent className="p-0 w-full h-full flex items-center justify-center">
         {creature ? (
           <CreatureCard
             creature={creature}
             isFaceDown={!creature.isFaceUp}
             isActive={isActive}
-            isOpponent={isOpponent}
             isAttacking={isAttacking}
             isShaking={isShaking}
             isDefending={isDefending}

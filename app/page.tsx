@@ -1966,9 +1966,9 @@ export default function CardGameArena() {
                   isShaking={gameState.opponentActiveIsShaking}
                   isDefending={gameState.opponentActiveIsDefending}
                   isDamaged={
-                    playerActiveCreature
+                    opponentActiveCreature
                       ? gameState.damagedCreatures.has(
-                          playerActiveCreature.instanceId
+                          opponentActiveCreature.instanceId
                         )
                       : false
                   }
@@ -1992,7 +1992,8 @@ export default function CardGameArena() {
                 {opponentActiveCreature &&
                   gameState.damageAnimations
                     .filter(
-                      (anim) => anim.creatureId === opponentActiveCreature.id
+                      (anim) =>
+                        anim.creatureId === opponentActiveCreature.instanceId
                     )
                     .map((anim) => (
                       <div
