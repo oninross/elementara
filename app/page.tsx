@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, JSX } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -15,7 +15,24 @@ import {
 import ArenaSlot from "@/components/arena-slot";
 import { CreatureCard } from "@/components/creature-card";
 import DiceComponent from "@/components/dice-component";
-import { RotateCcw, Trophy, Menu, Cross, CrossIcon, X } from "lucide-react";
+import {
+  Trophy,
+  Menu,
+  X,
+  ChevronLeft,
+  Swords,
+  Gamepad2,
+  Sword,
+  Dices,
+  Zap,
+  Shield,
+  RefreshCw,
+  Flame,
+  EarthIcon,
+  Wind,
+  Droplet,
+  Sprout,
+} from "lucide-react";
 import {
   loadWinTally,
   saveWinTally,
@@ -110,6 +127,7 @@ interface GameState {
   aiDifficulty: number; // Managed by game-logic.ts now
   endlessTrophies: Record<string, number>;
   isAchievementsOpen: boolean;
+  isInstructionsOpen: boolean;
 }
 
 const gameModes: GameMode[] = [
@@ -133,11 +151,11 @@ const gameModes: GameMode[] = [
   },
 ];
 
-const elementEmojis: Record<Element, string> = {
-  Fire: "🔥",
-  Water: "💧",
-  Earth: "🌱",
-  Air: "🌬️",
+const elementEmojis: Record<Element, JSX.Element> = {
+  Fire: <Flame className="h-12 w-12 text-red-500" />,
+  Water: <Droplet className="h-12 w-12 text-blue-500" />,
+  Earth: <Sprout className="h-12 w-12 text-green-500" />,
+  Air: <Wind className="h-12 w-12 text-blue-300" />,
 };
 
 const initialGameProgressState = {
@@ -334,6 +352,10 @@ export default function CardGameArena() {
 
   const closeAchievements = useCallback(() => {
     setGameState((prev) => ({ ...prev, isAchievementsOpen: false }));
+  }, []);
+
+  const closeInstructions = useCallback(() => {
+    setGameState((prev) => ({ ...prev, isInstructionsOpen: false }));
   }, []);
 
   const handleCardDetailView = useCallback((creature: Creature) => {
@@ -1778,11 +1800,14 @@ export default function CardGameArena() {
         {gameState.gamePhase === "setup" && (
           <div className="fixed inset-0 flex flex-col items-center justify-center bg-black text-white p-4 text-center z-20">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 drop-shadow-lg">
-              🌍
-              <br />
               Welcome to Elementara
               <br />
-              🔥💧🌱🌬️
+              <div className="flex items-center justify-center gap-4 mt-2">
+                <Flame className="h-12 w-12 text-red-500" />
+                <Droplet className="h-12 w-12 text-blue-500" />
+                <EarthIcon className="h-12 w-12 text-green-500" />
+                <Wind className="h-12 w-12 text-blue-300" />
+              </div>
             </h1>
             <p className="text-lg sm:text-xl md:text-2xl max-w-2xl mb-8 leading-relaxed">
               In a world where elemental creatures clash in epic dice-driven
@@ -1817,18 +1842,18 @@ export default function CardGameArena() {
             </button>
             {menuOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg flex flex-col p-4 gap-4 z-50">
-                {/* <button
-              onClick={() => {
-                setMenuOpen(false);
-                // Open How To Play modal or navigate
-                setGameState((prev) => ({
-                  ...prev,
-                  isAchievementsOpen: true,
-                })); // Replace with your How To Play logic
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition">
-              How To Play
-            </button> */}
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    // Open How To Play modal or navigate
+                    setGameState((prev) => ({
+                      ...prev,
+                      isInstructionsOpen: true,
+                    })); // Replace with your How To Play logic
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition">
+                  How To Play
+                </button>
 
                 {gameState.selectedGameMode && !gameState.isGameOver && (
                   <button
@@ -1962,17 +1987,6 @@ export default function CardGameArena() {
                           {gameState.selectedGameMode.name}
                         </h4>
                         <Button
-                          onClick={() => handleChallengeSelection(false)}
-                          variant="outline"
-                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group">
-                          <span className="text-xl font-bold mb-1 group-hover:text-white">
-                            Standard Match
-                          </span>
-                          <span className="text-sm text-black text-center group-hover:text-white">
-                            A single battle for glory.
-                          </span>
-                        </Button>
-                        <Button
                           onClick={() => handleChallengeSelection(true)}
                           variant="outline"
                           className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group">
@@ -1989,6 +2003,17 @@ export default function CardGameArena() {
                           </span>
                         </Button>
                         <Button
+                          onClick={() => handleChallengeSelection(false)}
+                          variant="outline"
+                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group">
+                          <span className="text-xl font-bold mb-1 group-hover:text-white">
+                            Standard Match
+                          </span>
+                          <span className="text-sm text-black text-center group-hover:text-white">
+                            A single battle for glory.
+                          </span>
+                        </Button>
+                        <Button
                           onClick={() =>
                             setGameState((prev) => ({
                               ...prev,
@@ -1998,7 +2023,7 @@ export default function CardGameArena() {
                           }
                           variant="ghost"
                           className="text-white/70 hover:text-foreground mt-2">
-                          Back to Mode Selection
+                          <ChevronLeft /> Back to Mode Selection
                         </Button>
                       </div>
                     ) : (
@@ -2037,8 +2062,12 @@ export default function CardGameArena() {
                 {gameState.gamePhase === "creatureSelection" && (
                   <div className="flex flex-col items-center gap-4 w-full">
                     <h4 className="text-white text-lg font-semibold text-center">
-                      🔥🌊🌱🌬️
-                      <br />
+                      <div className="flex items-center justify-center gap-2 mb-4">
+                        <Flame className="h-8 w-8 text-red-500" />
+                        <Droplet className="h-8 w-8 text-blue-500" />
+                        <EarthIcon className="h-8 w-8 text-green-500" />
+                        <Wind className="h-8 w-8 text-blue-300" />
+                      </div>
                       Awaken Your First Elementara (
                       {gameState.playerSelectedCreatureIds.length}/
                       {gameState.selectedGameMode?.playerCreatureCount || 3})
@@ -2051,7 +2080,7 @@ export default function CardGameArena() {
 
                     {/* Your Roster Preview (only for Set 3 mode) */}
                     {gameState.selectedGameMode?.id === "set-3" && (
-                      <div className="w-full bg-white/10 p-3 rounded-lg border border-white/20">
+                      <div className="w-full bg-white/10 p-4 rounded-lg border border-white/20">
                         <h5 className="text-white text-md font-semibold mb-2">
                           Your Roster:
                         </h5>
@@ -2119,9 +2148,7 @@ export default function CardGameArena() {
                                   "flex flex-col items-center justify-center p-4 h-auto",
                                   "text-black border-white/30 hover:bg-white/30 group" // Added 'group' class
                                 )}>
-                                <span className="text-4xl mb-2">
-                                  {ElementEmoji}
-                                </span>
+                                {ElementEmoji}
                                 <span className="text-sm font-bold text-black group-hover:text-white">
                                   {element}
                                 </span>
@@ -2174,7 +2201,7 @@ export default function CardGameArena() {
                             }
                             variant="outline"
                             className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-foreground">
-                            Back to Element Selection
+                            <ChevronLeft /> Back to Element Selection
                           </Button>
                         </div>
                       )}
@@ -2230,7 +2257,8 @@ export default function CardGameArena() {
                               }))
                             }
                             variant="outline"
-                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-foreground">
+                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-white">
+                            <ChevronLeft />
                             Back to Element Selection
                           </Button>
                         </div>
@@ -2268,19 +2296,15 @@ export default function CardGameArena() {
                               power.
                             </p>
 
-                            <p className="text-lg sm:text-xl">
-                              🐉 Start with a fully evolved creature.
-                            </p>
+                            <p>🐉 Start with a fully evolved creature.</p>
 
-                            <p className="text-lg sm:text-xl">
+                            <p>
                               📊 Use full HP stats, resistances, and weaknesses.
                             </p>
 
-                            <p className="text-lg sm:text-xl">
-                              🎲 Roll 1 die each turn to deal damage.
-                            </p>
+                            <p>🎲 Roll 1 die each turn to deal damage.</p>
 
-                            <p className="text-lg sm:text-xl">
+                            <p>
                               🏆 First to reduce the opponent's HP to 0 wins.
                             </p>
 
@@ -2296,25 +2320,15 @@ export default function CardGameArena() {
                               stages.
                             </p>
 
-                            <p className="text-lg sm:text-xl">
-                              🥚 Start with your Stage 1 creature.
-                            </p>
+                            <p>🥚 Start with your Stage 1 creature.</p>
 
-                            <p className="text-lg sm:text-xl">
-                              ⚡ Evolve mid-battle to unlock buffs.
-                            </p>
+                            <p>⚡ Evolve mid-battle to unlock buffs.</p>
 
-                            <p className="text-lg sm:text-xl">
-                              🔄 Tag between creatures at any time.
-                            </p>
+                            <p>🔄 Tag between creatures at any time.</p>
 
-                            <p className="text-lg sm:text-xl">
-                              📊 Use HP, resistances, and weaknesses.
-                            </p>
+                            <p>📊 Use HP, resistances, and weaknesses.</p>
 
-                            <p className="text-lg sm:text-xl">
-                              🏆 Last creature standing wins.
-                            </p>
+                            <p>🏆 Last creature standing wins.</p>
 
                             <p className="text-lg sm:text-xl font-semibold mt-6">
                               🧠 Master the art of evolution and strategy!
@@ -2812,6 +2826,191 @@ export default function CardGameArena() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {gameState.isInstructionsOpen && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in-0 text-white/80 h-full"
+            onClick={closeInstructions}>
+            <div
+              className="relative w-full max-w-xl bg-gray-900/70 border border-white/20 rounded-xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 h-full"
+              onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={closeInstructions}
+                className="absolute -top-3 -right-3 z-10 w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg border-2 border-white/50"
+                title="Close">
+                <span className="text-xl font-bold">✕</span>
+              </button>
+
+              <h2 className="text-xl font-bold text-center mb-6 flex items-center justify-center gap-3">
+                <Swords className="h-8 w-8 text-yellow-400" /> How to Play
+                <em>Elementara: Spirits of the Dice</em>
+                <Swords className="h-8 w-8 text-yellow-400" />
+              </h2>
+
+              <div className="overflow-y-auto h-[90%]">
+                <p className="mb-8">
+                  <strong>Elementara</strong> is a fast-paced, dice-powered
+                  creature battle game. Knock out all enemy creatures by using
+                  smart rolls, elemental matchups, and strategic tagging.
+                </p>
+
+                <h2 className="font-bold text-xl mb-4 flex gap-2 items-center">
+                  <Gamepad2 /> Game Modes
+                </h2>
+
+                <h3 className="font-bold">1. Evolution Mode (3v3 Battle)</h3>
+                <ul className="mb-8 list-disc list-inside pl-4">
+                  <li>
+                    Choose <strong>3 creatures</strong> from any element (Fire,
+                    Water, Earth, or Air).
+                  </li>
+                  <li>
+                    Each creature evolves after every win (up to Stage 3).
+                  </li>
+                  <li>
+                    Evolution grants <strong>+10/+20 damage</strong> and{" "}
+                    <strong>-10/-20 damage taken</strong>.
+                  </li>
+                </ul>
+
+                <h3 className="font-bold">
+                  2. Endless Challenge Mode (Solo Survival)
+                </h3>
+                <ul className="mb-8 list-disc list-inside pl-4">
+                  <li>
+                    Pick <strong>one elemental line</strong> (e.g. Sigael →
+                    Drakalayo → Infernuko).
+                  </li>
+                  <li>Battle through as many opponents as possible.</li>
+                  <li>
+                    After each win:
+                    <ul className="list-disc list-inside pl-8">
+                      <li>
+                        All creatures <strong>de-evolve</strong> to Stage 1
+                      </li>
+                      <li>
+                        HP restores to <strong>75%</strong> of max
+                      </li>
+                      <li>
+                        KO’d creatures return at <strong>50% HP</strong>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>Win tally is saved locally. Try to beat your record!</li>
+                </ul>
+
+                <h2 className="font-bold text-xl mb-4 flex gap-2 items-center">
+                  <Sword /> How Combat Works
+                </h2>
+
+                <h3 className="font-bold mb-4 flex gap-2 items-center">
+                  <Dices /> Dice Roll
+                </h3>
+                <p className="mb-8">
+                  At the start of your turn, roll a six-sided die (1–6). The
+                  result is your <strong>base attack damage</strong>.
+                </p>
+
+                <h3 className="font-bold mb-4 flex gap-2 items-center">
+                  <Zap /> Damage Calculation
+                </h3>
+                <ul className="mb-8 list-disc list-inside pl-4">
+                  <li>Stage 1: Base damage</li>
+                  <li>Stage 2: Base damage +10</li>
+                  <li>Stage 3: Base damage +20</li>
+                </ul>
+
+                <h3 className="font-bold mb-4 flex gap-2 items-center">
+                  <Shield /> Defense
+                </h3>
+                <ul className="mb-8 list-disc list-inside pl-4">
+                  <li>Stage 1: No bonus</li>
+                  <li>Stage 2: -10 damage taken</li>
+                  <li>Stage 3: -20 damage taken</li>
+                </ul>
+
+                <p className="mb-8">
+                  <strong>Example:</strong> You roll a 6 with a Stage 3 creature
+                  (6+20 = 26). Enemy is Stage 2, so they take{" "}
+                  <strong>16 damage</strong>.
+                </p>
+
+                <h3 className="font-bold mb-4 flex gap-2 items-center">
+                  <RefreshCw /> Tagging
+                </h3>
+                <p className="mb-8">
+                  You may tag a benched creature on your turn. This skips your
+                  attack but lets you gain a better elemental matchup.
+                </p>
+
+                <h2 className="font-bold text-xl mb-4 flex gap-2 items-center">
+                  <Flame /> Elemental Strengths & Weaknesses
+                </h2>
+
+                <ul className="mb-8 list-disc list-inside pl-4">
+                  <li>
+                    Each creature has one <strong>Weakness</strong> (+10 damage
+                    taken)
+                  </li>
+                  <li>
+                    Each creature has one <strong>Resistance</strong> (-10
+                    damage taken)
+                  </li>
+                </ul>
+
+                <h4>Element Chart:</h4>
+                <ul className="mb-8 list-disc list-inside pl-4">
+                  <li className="flex items-center gap-2 mb-2">
+                    <Flame className="text-red-500" /> beats{" "}
+                    <EarthIcon className="text-green-500" />
+                  </li>
+                  <li className="flex items-center gap-2 mb-2">
+                    <EarthIcon className="text-green-500" /> beats{" "}
+                    <Wind className="text-blue-300" />
+                  </li>
+                  <li className="flex items-center gap-2 mb-2">
+                    <Wind className="text-blue-300" /> beats{" "}
+                    <Droplet className="text-blue-500" />
+                  </li>
+                  <li className="flex items-center gap-2 mb-2">
+                    <Droplet className="text-blue-500" /> beats{" "}
+                    <Flame className="text-red-500" />
+                  </li>
+                </ul>
+
+                <h2 className="font-bold text-xl mb-4">
+                  🌑 Corrupted Dice Mechanic
+                </h2>
+                <p className="mb-8">
+                  If the <strong>same die result appears twice in a row</strong>{" "}
+                  (either player), the die becomes <strong>Corrupted</strong>{" "}
+                  for 3 turns.
+                </p>
+
+                <p className="mb-4">
+                  <strong>The last player who rolled</strong> gains:
+                </p>
+                <ul className="mb-8 list-disc list-inside pl-4">
+                  <li>+10 bonus damage</li>
+                  <li>-10 damage taken</li>
+                  <li>
+                    Rolls of 5 or 6 become <strong>Critical Hits</strong>
+                  </li>
+                </ul>
+
+                <p className="mb-8">
+                  <strong>
+                    Critical Hit = 50 Damage and skip your next turn.
+                  </strong>
+                </p>
+                <p>
+                  Note: Corruption can only trigger{" "}
+                  <strong>once per game</strong>.
+                </p>
               </div>
             </div>
           </div>
