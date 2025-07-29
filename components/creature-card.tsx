@@ -204,7 +204,7 @@ export const CreatureCard = ({
       <div
         className={cn(
           // Responsive sizing with consistent aspect ratio
-          "w-16 xs:w-18 sm:w-20 md:w-24 lg:w-28 xl:w-32", // Widths remain, heights derived from aspect ratio
+          "w-16 h-20 xs:w-18 xs:h-24 sm:w-20 sm:h-28 md:w-24 md:h-32 lg:w-28 lg:h-36 xl:w-32 xl:h-40",
           "aspect-[5/7]", // Increased height by 25% (4 / (5 * 1.25) = 16/25)
           "rounded shadow-lg border-2 overflow-hidden relative cursor-pointer",
           "flex flex-col",
