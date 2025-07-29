@@ -82,11 +82,11 @@ const creatureImages: Record<string, string> = {
   // Fire creatures
   apoymortis: "/images/apoymortis.jpeg",
   magdanok: "/images/magdanok.jpeg",
-  silabrix: "/images/silabrix.jpeg",
+  sunuko: "/images/sunuko.jpeg",
   sigael: "/images/sigael.jpeg",
-  alkaulon: "/images/alkaulon.jpeg",
+  pyrocrys: "/images/pyrocrys.jpeg",
   infernuko: "/images/infernuko.jpeg",
-  asonis: "/images/asonis.jpeg",
+  solaurix: "/images/solaurix.jpeg",
   liyabon: "/images/liyabon.jpeg",
   drakalayo: "/images/drakalayo.jpeg",
 
