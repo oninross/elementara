@@ -402,8 +402,8 @@ export default function CardGameArena() {
 
       // Apply AI difficulty damage buff if opponent is attacking
       if (gameState.turn === "opponent") {
-        finalDamage += gameState.aiDifficulty - 1 // Add (difficulty - 1) extra damage
-        addToLog(`Opponent's AI difficulty adds ${gameState.aiDifficulty - 1} extra damage!`)
+        finalDamage += (gameState.aiDifficulty - 1) * 5 // Add (difficulty - 1) * 5 extra damage
+        addToLog(`Opponent's AI difficulty adds ${(gameState.aiDifficulty - 1) * 5} extra damage!`)
       }
 
       // Apply weakness/resistance only if not a critical miss
@@ -1666,6 +1666,10 @@ export default function CardGameArena() {
                     Back to Main Menu
                   </button>
                 )}
+
+                <div className="border-t border-gray-200 pt-2 mt-2">
+                  <span className="text-xs text-gray-500 text-center block">v1.0.9</span>
+                </div>
               </div>
             )}
           </div>
