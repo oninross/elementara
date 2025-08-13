@@ -427,22 +427,17 @@ export default function CardGameArena() {
       finalDamage = Math.max(0, finalDamage)
 
       // Add damage animation for the defender
-      addDamageAnimation(defender.instanceId, finalDamage) // <-- use instanceId
+      addDamageAnimation(defender.instanceId, finalDamage)
 
       setGameState((prev) => {
         const updatedPlayer = { ...prev.player }
         const updatedOpponent = { ...prev.opponent }
 
-        const isDefenderPlayerSide =
-          (prev.player.activeCreature && prev.player.activeCreature.instanceId === defender.instanceId) ||
-          prev.player.benchCreatures.some((c) => c.instanceId === defender.instanceId)
+        const shouldUpdatePlayer = isCriticalMiss
+          ? prev.turn === "player" // Critical miss: damage the current turn's player
+          : prev.turn === "opponent" // Normal attack: damage the opposite side
 
-        const isDefenderOpponentSide =
-          (prev.opponent.activeCreature && prev.opponent.activeCreature.instanceId === defender.instanceId) ||
-          prev.opponent.benchCreatures.some((c) => c.instanceId === defender.instanceId)
-
-        // Apply damage only to the correct side
-        if (isDefenderPlayerSide) {
+        if (shouldUpdatePlayer) {
           // Update player's active creature if it's the defender
           if (prev.player.activeCreature && prev.player.activeCreature.instanceId === defender.instanceId) {
             updatedPlayer.activeCreature = {
@@ -454,7 +449,7 @@ export default function CardGameArena() {
           updatedPlayer.benchCreatures = updatedPlayer.benchCreatures.map((c) =>
             c.instanceId === defender.instanceId ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) } : c,
           )
-        } else if (isDefenderOpponentSide) {
+        } else {
           // Update opponent's active creature if it's the defender
           if (prev.opponent.activeCreature && prev.opponent.activeCreature.instanceId === defender.instanceId) {
             updatedOpponent.activeCreature = {
