@@ -24,9 +24,13 @@ export const metadata: Metadata = {
   },
 }
 
-import { Inter } from "next/font/google"
+import { DM_Sans } from "next/font/google"
 
-const inter = Inter({ subsets: ["latin"] })
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-dm-sans",
+})
 
 export default function RootLayout({
   children,
@@ -35,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${dmSans.variable} ${dmSans.className}`}>
         <Suspense fallback={null}>
           <DisableSW /> {/* ← unregister Service Workers in the preview */}
           {children}
