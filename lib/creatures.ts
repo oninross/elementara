@@ -88,25 +88,25 @@ const rawRosterData: RawCreatureLineData[] = [
     ],
   },
   {
-    line: "Pyrocrys",
+    line: "Silabrix",
     element: "Fire",
     creatures: [
       {
-        name: "Sunuko",
+        name: "Asonis",
         stage: 0,
         hp: 100,
         resistance: "None",
         weakness: "Water",
       },
       {
-        name: "Solaurix",
+        name: "Silabrix",
         stage: 1,
         hp: 130,
         resistance: "Air",
         weakness: "Earth",
       },
       {
-        name: "Solaurix",
+        name: "Alkaulon",
         stage: 2,
         hp: 140,
         resistance: "Air",

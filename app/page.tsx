@@ -412,8 +412,11 @@ export default function CardGameArena() {
           finalDamage += 10
           addToLog(`${defender.name} is weak to ${attacker.element}! Extra 10 damage.`)
         } else if (defender.resistance === attacker.element) {
-          finalDamage -= 10
-          addToLog(`${defender.name} resists ${attacker.element}! Reduced 10 damage.`)
+          // Resistance reduces damage by 50% instead of flat 10, with minimum 2 damage
+          const resistanceReduction = Math.floor(finalDamage * 0.5)
+          finalDamage -= resistanceReduction
+          finalDamage = Math.max(2, finalDamage) // Ensure minimum 2 damage even with resistance
+          addToLog(`${defender.name} resists ${attacker.element}! Damage reduced by ${resistanceReduction}.`)
         }
       }
 
@@ -424,7 +427,7 @@ export default function CardGameArena() {
         finalDamage -= 20
       }
 
-      finalDamage = Math.max(0, finalDamage)
+      finalDamage = Math.max(1, finalDamage)
 
       // Add damage animation for the defender
       addDamageAnimation(defender.instanceId, finalDamage)
@@ -916,31 +919,27 @@ export default function CardGameArena() {
 
         switch (newValue) {
           case 1:
-            // Critical Miss - 10 damage to self
             damage = 10
             addToLog(`${attacker.name} suffered a Critical Miss!`)
             applyDamage(attacker, attacker, damage, true)
             break
           case 2:
           case 3:
-            // Normal Hit - 20 base damage to opponent
-            damage = 20
-            addToLog(`${attacker.name} landed a Normal Hit!`)
+            damage = 10
+            addToLog(`${attacker.name} landed a Standard Hit!`)
             applyDamage(attacker, defender, damage)
             break
           case 4:
           case 5:
-            // Strong Hit - 30 base damage to opponent
-            damage = 30
-            addToLog(`${attacker.name} landed a Strong Hit!`)
+            damage = 20
+            addToLog(`${attacker.name} landed a Power Hit!`)
             applyDamage(attacker, defender, damage)
             break
           case 6:
-            // Critical Hit - 50 base damage to opponent + attacker forfeits next turn
             damage = 50
             addToLog(`${attacker.name} landed a Critical Hit!`)
             applyDamage(attacker, defender, damage)
-            addToLog(`${attacker.name} deals massive damage but forfeits their next turn!`) // Log for attacker
+            addToLog(`${attacker.name} deals massive damage but forfeits their next turn!`)
             break
         }
 
@@ -950,8 +949,10 @@ export default function CardGameArena() {
 
           return {
             ...prev,
-            playerActiveIsShaking: (isPlayerAttacking && isCriticalMiss) || (!isPlayerAttacking && !isCriticalMiss),
-            opponentActiveIsShaking: (!isPlayerAttacking && isCriticalMiss) || (isPlayerAttacking && !isCriticalMiss),
+            playerActiveIsShaking:
+              (isPlayerAttacking && isCriticalMiss) || (!isPlayerAttacking && newValue >= 2 && newValue <= 6),
+            opponentActiveIsShaking:
+              (!isPlayerAttacking && isCriticalMiss) || (isPlayerAttacking && newValue >= 2 && newValue <= 6),
           }
         })
 

@@ -84,9 +84,9 @@ const creatureImages: Record<string, string> = {
   magdanok: "/images/magdanok.jpeg",
   sunuko: "/images/sunuko.jpeg",
   sigael: "/images/sigael.jpeg",
-  pyrocrys: "/images/pyrocrys.jpeg",
-  infernuko: "/images/infernuko.jpeg",
-  solaurix: "/images/solaurix.jpeg",
+  asonis: "/images/asonis.jpeg",
+  silabrix: "/images/silabrix.jpeg",
+  alkaulon: "/images/alkaulon.jpeg",
   liyabon: "/images/liyabon.jpeg",
   drakalayo: "/images/drakalayo.jpeg",
 
