@@ -1588,9 +1588,8 @@ export default function CardGameArena() {
   return (
     <>
       {gameState.isEndlessModeActive && gameState.gamePhase === "inGame" && (
-        <div className="fixed top-4 left-4 z-50 flex items-center gap-2 bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-lg border border-white/20 shadow-lg">
-          <Trophy className="h-5 w-5 text-yellow-400" />
-          <span className="font-bold text-lg">{gameState.endlessWins}</span>
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white text-black px-3 py-1 rounded-full text-sm font-medium shadow-lg">
+          Wave {gameState.endlessWins + 1}
         </div>
       )}
       <div
