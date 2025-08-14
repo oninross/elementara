@@ -1594,7 +1594,7 @@ export default function CardGameArena() {
       )}
       <div
         className={cn(
-          "min-h-screen p-2 sm:p-4 relative flex items-center justify-center bg-black",
+          "min-h-screen p-2 sm:p-4 relative flex items-center justify-center",
           gameState.replacementPhaseForPlayer && "opacity-30 pointer-events-none", // Dim and disable interaction
         )}
       >
