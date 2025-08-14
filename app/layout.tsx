@@ -1,9 +1,9 @@
-import type React from "react"
-import type { Metadata } from "next"
-import "./globals.css"
-import DisableSW from "@/components/disable-sw"
-import { Analytics } from "@vercel/analytics/react"
-import { Suspense } from "react"
+import type React from "react";
+import type { Metadata } from "next";
+import "./globals.css";
+import DisableSW from "@/components/disable-sw";
+import { Analytics } from "@vercel/analytics/react";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Elementara Card Game",
@@ -22,24 +22,24 @@ export const metadata: Metadata = {
   icons: {
     apple: "/icons/apple-touch-icon.png", // Apple touch icon
   },
-}
+};
 
-import { DM_Sans } from "next/font/google"
+import { DM_Sans } from "next/font/google";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-dm-sans",
-})
+});
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
-      <body className={`${dmSans.variable} ${dmSans.className}`}>
+      <body className={`${dmSans.variable} ${dmSans.className} bg-black/50`}>
         <Suspense fallback={null}>
           <DisableSW /> {/* ← unregister Service Workers in the preview */}
           {children}
@@ -47,5 +47,5 @@ export default function RootLayout({
         </Suspense>
       </body>
     </html>
-  )
+  );
 }
