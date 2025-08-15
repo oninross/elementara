@@ -267,7 +267,7 @@ export const CreatureCard = ({
         {/* Info Icon - Positioned at top-right corner */}
         <button
           onClick={handleInfoClick}
-          className="absolute top-1 right-1 z-10 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-blue-500 text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg"
+          className="absolute top-1 right-1 z-10 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 glass-button-primary rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg"
           title="View card details">
           <Info className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3" />
         </button>

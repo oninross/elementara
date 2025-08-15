@@ -168,10 +168,10 @@ const gameModes: GameMode[] = [
 ];
 
 const elementEmojis: Record<Element, JSX.Element> = {
-  Fire: <Flame className="h-12 w-12 text-red-500" />,
-  Water: <Droplet className="h-12 w-12 text-blue-500" />,
-  Earth: <Sprout className="h-12 w-12 text-green-500" />,
-  Air: <Wind className="h-12 w-12 text-blue-300" />,
+  Fire: <Flame className="h-12 w-12 text-red-500 group" />,
+  Water: <Droplet className="h-12 w-12 text-blue-500 group" />,
+  Earth: <Sprout className="h-12 w-12 text-green-500 group" />,
+  Air: <Wind className="h-12 w-12 text-blue-300 group" />,
 };
 
 const initialGameProgressState = {
@@ -2102,10 +2102,10 @@ export default function CardGameArena() {
                               onClick={() => handleModeSelection(mode)}
                               variant="outline"
                               className="glass-button flex flex-col items-center justify-center p-4 h-auto group">
-                              <span className="text-xl font-bold mb-1">
+                              <span className="text-xl font-bold mb-1 glass-text">
                                 {mode.name}
                               </span>
-                              <span className="text-sm text-center">
+                              <span className="text-sm glass-text text-center">
                                 {mode.description}
                               </span>
                             </Button>
@@ -2210,7 +2210,7 @@ export default function CardGameArena() {
                                 variant="outline"
                                 className={cn(
                                   "flex flex-col items-center justify-center p-4 h-auto",
-                                  "text-black border-white/30 hover:bg-white/30 group" // Added 'group' class
+                                  "text-white border-white/30 hover:bg-white group" // Added 'group' class
                                 )}>
                                 {ElementEmoji}
                                 <span className="text-sm font-bold text-white group-hover:text-white">
@@ -2264,7 +2264,7 @@ export default function CardGameArena() {
                               }))
                             }
                             variant="outline"
-                            className="glass-button hover:bg-white/30 text-white border-white">
+                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-foreground">
                             <ChevronLeft /> Back to Element Selection
                           </Button>
                         </div>
@@ -2321,8 +2321,9 @@ export default function CardGameArena() {
                               }))
                             }
                             variant="outline"
-                            className="glass-button hover:bg-white/30 text-white border-white">
-                            <ChevronLeft /> Back to Element Selection
+                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-white">
+                            <ChevronLeft />
+                            Back to Element Selection
                           </Button>
                         </div>
                       )}
@@ -2335,7 +2336,7 @@ export default function CardGameArena() {
                           gameState.playerSelectedCreatureIds.length !==
                           (gameState.selectedGameMode?.playerCreatureCount || 3)
                         }
-                        className="glass-button text-white hover:bg-white/30">
+                        className="button hover:bg-green-700 text-white">
                         Confirm Roster
                       </Button>
                     )}
@@ -2402,8 +2403,13 @@ export default function CardGameArena() {
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
-                              <ChartColumnBig /> Use HP, resistances, and
-                              weaknesses.
+                              <ChartColumnBig /> Manage HP, resistances,
+                              weaknesses, and corrupted dice effects.
+                            </p>
+
+                            <p className="flex items-center gap-4 text-sm">
+                              <Swords /> Choose your action each turn: Attack,
+                              Guard, Charge, or Tag.
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
@@ -2421,7 +2427,7 @@ export default function CardGameArena() {
 
                     <Button
                       onClick={proceedFromInstructions}
-                      className="glass-button text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105 mt-4">
+                      className="bg-white/10 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105 mt-4">
                       {gameState.selectedGameMode?.id === "set-2"
                         ? "Begin Full Power Battle"
                         : "Begin Evolution Clash"}
@@ -2659,176 +2665,6 @@ export default function CardGameArena() {
           </div>
         )}
 
-        {/* Card Details Modal */}
-        {gameState.isCardDetailsOpen && gameState.selectedCardForDetails && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-            <div className="relative w-full h-full flex items-center justify-center p-4">
-              {/* Close button */}
-              <Button
-                onClick={closeCardDetails}
-                size="icon"
-                className="absolute top-4 right-4 z-[201] w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg transition-all duration-200 hover:scale-105">
-                <span className="text-xl text-black">✕</span>
-                <span className="sr-only">Close Card Details</span>
-              </Button>
-
-              {/* Enlarged Card */}
-              <div className="animate-card-flip-and-scale">
-                <div className="w-80 h-96 sm:w-96 sm:h-[28rem] md:w-[28rem] md:h-[36rem] bg-white rounded-xl shadow-2xl border-4 border-gray-300 overflow-hidden">
-                  {/* Card Header */}
-                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 sm:p-6">
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-2">
-                      {gameState.selectedCardForDetails.name}
-                    </h2>
-                    <div className="flex justify-center items-center gap-2">
-                      <span className="text-4xl sm:text-5xl md:text-6xl">
-                        {
-                          elementEmojis[
-                            gameState.selectedCardForDetails.element
-                          ]
-                        }
-                      </span>
-                      <span className="text-lg sm:text-xl md:text-2xl font-semibold">
-                        {gameState.selectedCardForDetails.element}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Card Content */}
-                  <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 h-full bg-gradient-to-b from-white to-gray-50">
-                    {/* Stage */}
-                    <div className="text-center">
-                      <span className="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm sm:text-base font-medium">
-                        {gameState.selectedCardForDetails.stage}
-                      </span>
-                    </div>
-
-                    {/* HP Stats */}
-                    <div className="bg-red-50 rounded-lg p-3 sm:p-4 border-2 border-red-200">
-                      <h3 className="text-lg sm:text-xl font-bold text-red-700 mb-2 text-center">
-                        Health Points
-                      </h3>
-                      <div className="flex justify-between items-center">
-                        <span className="text-base sm:text-lg font-medium text-gray-700">
-                          Current HP:
-                        </span>
-                        <span className="text-xl sm:text-2xl font-bold text-red-600">
-                          {gameState.selectedCardForDetails.currentHp}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-base sm:text-lg font-medium text-gray-700">
-                          Max HP:
-                        </span>
-                        <span className="text-xl sm:text-2xl font-bold text-red-800">
-                          {gameState.selectedCardForDetails.maxHp}
-                        </span>
-                      </div>
-                      <div className="mt-3">
-                        <div className="w-full bg-gray-300 rounded-full h-3 sm:h-4">
-                          <div
-                            className="bg-red-500 h-3 sm:h-4 rounded-full transition-all duration-500"
-                            style={{
-                              width: `${
-                                (gameState.selectedCardForDetails.currentHp /
-                                  gameState.selectedCardForDetails.maxHp) *
-                                100
-                              }%`,
-                            }}></div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Weaknesses and Resistances */}
-                    {(gameState.selectedCardForDetails.weakness ||
-                      gameState.selectedCardForDetails.resistance) && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                        {gameState.selectedCardForDetails.weakness && (
-                          <div className="bg-orange-50 rounded-lg p-3 border-2 border-orange-200">
-                            <h4 className="text-sm sm:text-base font-bold text-orange-700 mb-1 text-center">
-                              Weakness
-                            </h4>
-                            <div className="flex justify-center items-center gap-1">
-                              <span className="text-2xl sm:text-3xl">
-                                {
-                                  elementEmojis[
-                                    gameState.selectedCardForDetails.weakness
-                                  ]
-                                }
-                              </span>
-                              <span className="text-sm sm:text-base font-medium text-orange-600">
-                                {gameState.selectedCardForDetails.weakness}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                        {gameState.selectedCardForDetails.resistance && (
-                          <div className="bg-green-50 rounded-lg p-3 border-2 border-green-200">
-                            <h4 className="text-sm sm:text-base font-bold text-green-700 mb-1 text-center">
-                              Resistance
-                            </h4>
-                            <div className="flex justify-center items-center gap-1">
-                              <span className="text-2xl sm:text-3xl">
-                                {
-                                  elementEmojis[
-                                    gameState.selectedCardForDetails.resistance
-                                  ]
-                                }
-                              </span>
-                              <span className="text-sm sm:text-base font-medium text-green-600">
-                                {gameState.selectedCardForDetails.resistance}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Ability */}
-                    {gameState.selectedCardForDetails.ability && (
-                      <div className="bg-purple-50 rounded-lg p-3 sm:p-4 border-2 border-purple-200">
-                        <h4 className="text-base sm:text-lg font-bold text-purple-700 mb-2 text-center">
-                          Special Ability
-                        </h4>
-                        <p className="text-sm sm:text-base text-purple-600 text-center font-medium">
-                          {gameState.selectedCardForDetails.ability}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Evolution Line */}
-                    {gameState.selectedCardForDetails.evolutionLine && (
-                      <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border-2 border-blue-200">
-                        <h4 className="text-base sm:text-lg font-bold text-blue-700 mb-2 text-center">
-                          Evolution Line
-                        </h4>
-                        <p className="text-sm sm:text-base text-blue-600 text-center font-medium">
-                          {gameState.selectedCardForDetails.evolutionLine}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Battle Stats */}
-                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border-2 border-gray-200">
-                      <h4 className="text-base sm:text-lg font-bold text-gray-700 mb-2 text-center">
-                        Battle Stats
-                      </h4>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm sm:text-base font-medium text-gray-600">
-                          Turns Survived:
-                        </span>
-                        <span className="text-lg sm:text-xl font-bold text-gray-800">
-                          {gameState.selectedCardForDetails.turnsSurvived || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Achievements Modal */}
         {gameState.isAchievementsOpen && (
           <div
@@ -2901,8 +2737,10 @@ export default function CardGameArena() {
               </button>
 
               <h2 className="text-xl font-bold text-center mb-6 flex items-center justify-center gap-3">
-                <Swords className="h-8 w-8 text-yellow-400" /> How to Play
-                <em>Elementara: Spirits of the Dice</em>
+                <Swords className="h-8 w-8 text-yellow-400" />
+                <span>
+                  How to Play <em>Elementara: Spirits of the Dice</em>
+                </span>
                 <Swords className="h-8 w-8 text-yellow-400" />
               </h2>
 
@@ -2912,11 +2750,9 @@ export default function CardGameArena() {
                   creature battle game. Knock out all enemy creatures by using
                   smart rolls, elemental matchups, and strategic tagging.
                 </p>
-
                 <h2 className="font-bold text-xl mb-4 flex gap-2 items-center">
                   <Gamepad2 /> Game Modes
                 </h2>
-
                 <h3 className="font-bold">1. Evolution Mode (3v3 Battle)</h3>
                 <ul className="mb-8 list-disc list-inside pl-4">
                   <li>
@@ -2931,7 +2767,6 @@ export default function CardGameArena() {
                     <strong>-10/-20 damage taken</strong>.
                   </li>
                 </ul>
-
                 <h3 className="font-bold">
                   2. Endless Challenge Mode (Solo Survival)
                 </h3>
@@ -2963,13 +2798,37 @@ export default function CardGameArena() {
                 </h2>
 
                 <h3 className="font-bold mb-4 flex gap-2 items-center">
-                  <Dices /> Dice Roll
+                  <Dices /> Action Choice System
                 </h3>
+                <p className="mb-2">
+                  At the start of your turn, you can choose:
+                </p>
+                <ul className="mb-8 list-disc list-inside pl-4">
+                  <li className="mb-2">
+                    <strong>Attack</strong>: Roll die, apply damage normally.
+                  </li>
+                  <li className="mb-2">
+                    <strong>Guard</strong>: Halve all incoming damage until your
+                    next turn.
+                  </li>
+                  <li className="mb-2">
+                    <strong>Charge</strong>: Skip attack, gain +10 damage on
+                    your next Attack action.
+                  </li>
+                  <li className="mb-2">
+                    <strong>Tag</strong>: Switch to another Elemental (lose your
+                    turn).
+                  </li>
+                  <li>
+                    <strong>Evolve</strong>: Evolve your active creature
+                    (Evolution Clash only).
+                  </li>
+                </ul>
+
                 <p className="mb-8">
                   At the start of your turn, roll a six-sided die (1–6). The
                   result is your <strong>base attack damage</strong>.
                 </p>
-
                 <h3 className="font-bold mb-4 flex gap-2 items-center">
                   <Zap /> Damage Calculation
                 </h3>
@@ -2978,7 +2837,6 @@ export default function CardGameArena() {
                   <li>Stage 2: Base damage +10</li>
                   <li>Stage 3: Base damage +20</li>
                 </ul>
-
                 <h3 className="font-bold mb-4 flex gap-2 items-center">
                   <Shield /> Defense
                 </h3>
@@ -2987,13 +2845,11 @@ export default function CardGameArena() {
                   <li>Stage 2: -10 damage taken</li>
                   <li>Stage 3: -20 damage taken</li>
                 </ul>
-
                 <p className="mb-8">
                   <strong>Example:</strong> You roll a 6 with a Stage 3 creature
                   (6+20 = 26). Enemy is Stage 2, so they take{" "}
                   <strong>16 damage</strong>.
                 </p>
-
                 <h3 className="font-bold mb-4 flex gap-2 items-center">
                   <RefreshCw /> Tagging
                 </h3>
@@ -3001,11 +2857,9 @@ export default function CardGameArena() {
                   You may tag a benched creature on your turn. This skips your
                   attack but lets you gain a better elemental matchup.
                 </p>
-
                 <h2 className="font-bold text-xl mb-4 flex gap-2 items-center">
                   <Flame /> Elemental Strengths & Weaknesses
                 </h2>
-
                 <ul className="mb-8 list-disc list-inside pl-4">
                   <li>
                     Each creature has one <strong>Weakness</strong> (+10 damage
@@ -3016,7 +2870,6 @@ export default function CardGameArena() {
                     damage taken)
                   </li>
                 </ul>
-
                 <h4>Element Chart:</h4>
                 <ul className="mb-8 list-disc list-inside pl-4">
                   <li className="flex items-center gap-2 mb-2">
@@ -3036,8 +2889,7 @@ export default function CardGameArena() {
                     <Flame className="text-red-500" />
                   </li>
                 </ul>
-
-                <h2 className="font-bold text-xl mb-4">
+                <h2 className="font-bold text-xl mb-4 flex gap-2 items-center">
                   <Shell /> Corrupted Dice Mechanic
                 </h2>
                 <p className="mb-8">
@@ -3045,7 +2897,6 @@ export default function CardGameArena() {
                   (either player), the die becomes <strong>Corrupted</strong>{" "}
                   for 3 turns.
                 </p>
-
                 <p className="mb-4">
                   <strong>The last player who rolled</strong> gains:
                 </p>
@@ -3056,7 +2907,6 @@ export default function CardGameArena() {
                     Rolls of 5 or 6 become <strong>Critical Hits</strong>
                   </li>
                 </ul>
-
                 <p className="mb-8">
                   <strong>
                     Critical Hit = 50 Damage and skip your next turn.
