@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useCallback, useRef, type JSX } from "react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useCallback, useRef, type JSX } from "react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import {
   type Creature,
   getNextEvolution,
@@ -11,10 +11,10 @@ import {
   createCreature,
   type Element,
   getAllLevel3Creatures,
-} from "@/lib/creatures";
-import ArenaSlot from "@/components/arena-slot";
-import { CreatureCard } from "@/components/creature-card";
-import DiceComponent from "@/components/dice-component";
+} from "@/lib/creatures"
+import ArenaSlot from "@/components/arena-slot"
+import { CreatureCard } from "@/components/creature-card"
+import DiceComponent from "@/components/dice-component"
 import {
   Trophy,
   Menu,
@@ -38,112 +38,94 @@ import {
   BrainCircuit,
   Shell,
   Origami,
-} from "lucide-react";
-import {
-  loadWinTally,
-  saveWinTally,
-  handleWin,
-  handleLoss,
-  generateOpponentCreatures,
-} from "@/lib/game-logic";
+} from "lucide-react"
+import { loadWinTally, saveWinTally, handleWin, handleLoss, generateOpponentCreatures } from "@/lib/game-logic"
 
 interface PlayerState {
-  activeCreature: Creature | null;
-  benchCreatures: Creature[];
-  skippedTurn: boolean;
+  activeCreature: Creature | null
+  benchCreatures: Creature[]
+  skippedTurn: boolean
 }
 
-type GamePhase =
-  | "setup"
-  | "modeSelection"
-  | "creatureSelection"
-  | "instructions"
-  | "coinToss"
-  | "inGame"
-  | "gameOver";
+type GamePhase = "setup" | "modeSelection" | "creatureSelection" | "instructions" | "coinToss" | "inGame" | "gameOver"
 
-type ActionChoice = "attack" | "guard" | "charge" | "tag" | "evolve" | null;
+type ActionChoice = "attack" | "guard" | "charge" | "tag" | "evolve" | null
 
 export interface GameMode {
-  id: string;
-  name: string;
-  description: string;
-  playerCreatureCount: number;
-  evolutionTurnsRequired: number;
-  allowEvolution: boolean;
-  startingHp: number;
+  id: string
+  name: string
+  description: string
+  playerCreatureCount: number
+  evolutionTurnsRequired: number
+  allowEvolution: boolean
+  startingHp: number
 }
 
 interface DamageAnimation {
-  creatureId: string;
-  damage: number;
-  timestamp: number;
+  creatureId: string
+  damage: number
+  timestamp: number
 }
 
 interface GameState {
-  gamePhase: GamePhase;
-  diceValue: number;
-  turn: "player" | "opponent";
-  isRolling: boolean;
-  hasRolledThisTurn: boolean;
-  player: PlayerState;
-  opponent: PlayerState;
-  isGameOver: boolean;
-  winner: "player" | "opponent" | null;
-  skipNextTurnFor: "player" | "opponent" | null;
-  playerSelectedCreatureIds: string[];
-  selectionSubPhase:
-    | "chooseElement"
-    | "chooseCreature"
-    | "chooseSpecificCreatureForSet2"
-    | "chooseChallengeType"
-    | null;
-  currentElementSelection: Element | null;
-  creaturesToChooseFrom: Creature[] | null;
-  replacementPhaseForPlayer: "player" | "opponent" | null;
-  needsReplacementRoll: boolean;
-  isTaggingOut: boolean;
-  playerActiveIsAttacking: boolean;
-  opponentActiveIsAttacking: boolean;
-  playerActiveIsShaking: boolean;
-  opponentActiveIsShaking: boolean;
-  playerActiveIsDefending: boolean;
-  opponentActiveIsDefending: boolean;
-  selectedGameMode: GameMode | null;
-  damageAnimations: DamageAnimation[];
-  damagedCreatures: Set<string>;
-  selectedCardForDetails: Creature | null;
-  isCardDetailsOpen: boolean;
-  finalEndlessScore?: number;
+  gamePhase: GamePhase
+  diceValue: number
+  turn: "player" | "opponent"
+  isRolling: boolean
+  hasRolledThisTurn: boolean
+  player: PlayerState
+  opponent: PlayerState
+  isGameOver: boolean
+  winner: "player" | "opponent" | null
+  skipNextTurnFor: "player" | "opponent" | null
+  playerSelectedCreatureIds: string[]
+  selectionSubPhase: "chooseElement" | "chooseCreature" | "chooseSpecificCreatureForSet2" | "chooseChallengeType" | null
+  currentElementSelection: Element | null
+  creaturesToChooseFrom: Creature[] | null
+  replacementPhaseForPlayer: "player" | "opponent" | null
+  needsReplacementRoll: boolean
+  isTaggingOut: boolean
+  playerActiveIsAttacking: boolean
+  opponentActiveIsAttacking: boolean
+  playerActiveIsShaking: boolean
+  opponentActiveIsShaking: boolean
+  playerActiveIsDefending: boolean
+  opponentActiveIsDefending: boolean
+  selectedGameMode: GameMode | null
+  damageAnimations: DamageAnimation[]
+  damagedCreatures: Set<string>
+  selectedCardForDetails: Creature | null
+  isCardDetailsOpen: boolean
+  finalEndlessScore?: number
 
   // Corrupted Die mechanic
-  lastDieRoll: number | null;
-  lastDieRollPlayer: "player" | "opponent" | null;
-  isCorrupted: boolean;
-  corruptedTurnsRemaining: number;
-  corruptedPlayer: "player" | "opponent" | null;
-  hasPlayerEvolved: boolean;
-  hasOpponentEvolved: boolean;
-  coinFlipResult: "Heads" | "Tails" | null;
+  lastDieRoll: number | null
+  lastDieRollPlayer: "player" | "opponent" | null
+  isCorrupted: boolean
+  corruptedTurnsRemaining: number
+  corruptedPlayer: "player" | "opponent" | null
+  hasPlayerEvolved: boolean
+  hasOpponentEvolved: boolean
+  coinFlipResult: "Heads" | "Tails" | null
 
   // Critical animations
-  isCriticalMiss: boolean;
-  isCriticalHit: boolean;
+  isCriticalMiss: boolean
+  isCriticalHit: boolean
 
-  isEndlessModeActive: boolean;
-  endlessWins: number; // Managed by game-logic.ts now
-  aiDifficulty: number; // Managed by game-logic.ts now
-  endlessTrophies: Record<string, number>;
-  isAchievementsOpen: boolean;
-  isInstructionsOpen: boolean;
+  isEndlessModeActive: boolean
+  endlessWins: number // Managed by game-logic.ts now
+  aiDifficulty: number // Managed by game-logic.ts now
+  endlessTrophies: Record<string, number>
+  isAchievementsOpen: boolean
+  isInstructionsOpen: boolean
 
-  playerActionChoice: ActionChoice;
-  opponentActionChoice: ActionChoice;
+  playerActionChoice: ActionChoice
+  opponentActionChoice: ActionChoice
 
-  playerIsGuarding: boolean;
-  playerIsCharged: boolean;
-  opponentIsGuarding: boolean;
-  opponentIsCharged: boolean;
+  playerIsGuarding: boolean
+  playerIsCharged: boolean
+  opponentIsGuarding: boolean
+  opponentIsCharged: boolean
 }
 
 const gameModes: GameMode[] = [
@@ -165,14 +147,14 @@ const gameModes: GameMode[] = [
     allowEvolution: false,
     startingHp: 80, // This will be overridden by creature's actual HP
   },
-];
+]
 
 const elementEmojis: Record<Element, JSX.Element> = {
   Fire: <Flame className="h-12 w-12 text-red-500" />,
   Water: <Droplet className="h-12 w-12 text-blue-500" />,
   Earth: <Sprout className="h-12 w-12 text-green-500" />,
   Air: <Wind className="h-12 w-12 text-blue-300" />,
-};
+}
 
 const initialGameProgressState = {
   diceValue: 1,
@@ -212,14 +194,14 @@ const initialGameProgressState = {
   isCriticalMiss: false,
   isCriticalHit: false,
   // endlessWins and aiDifficulty are now managed by game-logic.ts and loaded separately
-};
+}
 
 export default function CardGameArena() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false)
 
   //@ts-ignore
   const [gameState, setGameState] = useState<GameState>(() => {
-    const initialWins = loadWinTally();
+    const initialWins = loadWinTally()
     return {
       ...initialGameProgressState,
       gamePhase: "setup",
@@ -229,72 +211,67 @@ export default function CardGameArena() {
       aiDifficulty: initialWins + 1, // Initialize AI difficulty
       endlessTrophies: {}, // Loaded in useEffect
       isAchievementsOpen: false,
-    };
-  });
+    }
+  })
 
   // Move useRef declarations inside the component
-  const rollTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const damageTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const endTurnTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const rollTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const damageTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const endTurnTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const trophies: Record<string, number> = {};
+      const trophies: Record<string, number> = {}
       gameModes.forEach((mode) => {
-        const trophy = localStorage.getItem(`endless_trophy_${mode.id}`);
+        const trophy = localStorage.getItem(`endless_trophy_${mode.id}`)
         if (trophy) {
-          trophies[mode.id] = Number.parseInt(trophy, 10);
+          trophies[mode.id] = Number.parseInt(trophy, 10)
         }
-      });
-      setGameState((prev) => ({ ...prev, endlessTrophies: trophies }));
+      })
+      setGameState((prev) => ({ ...prev, endlessTrophies: trophies }))
     }
-  }, []);
+  }, [])
 
   const addToLog = useCallback((message: string) => {
-    console.log(`[Game Log] ${message}`);
-  }, []);
+    console.log(`[Game Log] ${message}`)
+  }, [])
 
-  const addDamageAnimation = useCallback(
-    (creatureId: string, damage: number) => {
-      const newAnimation: DamageAnimation = {
-        creatureId: creatureId,
-        damage,
-        timestamp: Date.now(),
-      };
+  const addDamageAnimation = useCallback((creatureId: string, damage: number) => {
+    const newAnimation: DamageAnimation = {
+      creatureId: creatureId,
+      damage,
+      timestamp: Date.now(),
+    }
 
+    setGameState((prev) => ({
+      ...prev,
+      damageAnimations: [...prev.damageAnimations, newAnimation],
+      damagedCreatures: new Set([...prev.damagedCreatures, creatureId]),
+    }))
+
+    // Remove the animation after 2 seconds
+    setTimeout(() => {
       setGameState((prev) => ({
         ...prev,
-        damageAnimations: [...prev.damageAnimations, newAnimation],
-        damagedCreatures: new Set([...prev.damagedCreatures, creatureId]),
-      }));
+        damageAnimations: prev.damageAnimations.filter((anim) => anim.timestamp !== newAnimation.timestamp),
+      }))
+    }, 2000)
 
-      // Remove the animation after 2 seconds
-      setTimeout(() => {
-        setGameState((prev) => ({
+    // Remove the damaged state after 1 second (shorter than animation for smooth transition)
+    setTimeout(() => {
+      setGameState((prev) => {
+        const newDamagedCreatures = new Set(prev.damagedCreatures)
+        newDamagedCreatures.delete(creatureId)
+        return {
           ...prev,
-          damageAnimations: prev.damageAnimations.filter(
-            (anim) => anim.timestamp !== newAnimation.timestamp
-          ),
-        }));
-      }, 2000);
-
-      // Remove the damaged state after 1 second (shorter than animation for smooth transition)
-      setTimeout(() => {
-        setGameState((prev) => {
-          const newDamagedCreatures = new Set(prev.damagedCreatures);
-          newDamagedCreatures.delete(creatureId);
-          return {
-            ...prev,
-            damagedCreatures: newDamagedCreatures,
-          };
-        });
-      }, 1000);
-    },
-    []
-  );
+          damagedCreatures: newDamagedCreatures,
+        }
+      })
+    }, 1000)
+  }, [])
 
   const restartGame = useCallback(() => {
-    const initialWins = loadWinTally(); // Load current win tally for endless mode
+    const initialWins = loadWinTally() // Load current win tally for endless mode
     //@ts-ignore
     setGameState((prev) => ({
       ...initialGameProgressState,
@@ -305,12 +282,12 @@ export default function CardGameArena() {
       aiDifficulty: initialWins + 1,
       endlessTrophies: prev.endlessTrophies,
       isAchievementsOpen: false,
-    }));
-    addToLog("Game restarted. Select a game mode to begin!");
-  }, [addToLog]);
+    }))
+    addToLog("Game restarted. Select a game mode to begin!")
+  }, [addToLog])
 
   const handleBackToMenu = useCallback(() => {
-    const initialWins = loadWinTally(); // Load current win tally for endless mode
+    const initialWins = loadWinTally() // Load current win tally for endless mode
     //@ts-ignore
     setGameState((prev) => ({
       ...initialGameProgressState,
@@ -321,16 +298,16 @@ export default function CardGameArena() {
       aiDifficulty: initialWins + 1,
       endlessTrophies: prev.endlessTrophies,
       isAchievementsOpen: false,
-    }));
-    addToLog("Returned to game mode selection.");
-  }, [addToLog]);
+    }))
+    addToLog("Returned to game mode selection.")
+  }, [addToLog])
 
   const handleRestartCurrentMode = useCallback(() => {
     //@ts-ignore
     setGameState((prev) => {
       if (!prev.selectedGameMode) {
         // Fallback to a full menu return if something went wrong
-        const initialWins = loadWinTally();
+        const initialWins = loadWinTally()
         return {
           ...initialGameProgressState,
           gamePhase: "modeSelection",
@@ -340,12 +317,12 @@ export default function CardGameArena() {
           aiDifficulty: initialWins + 1,
           endlessTrophies: prev.endlessTrophies,
           isAchievementsOpen: false,
-        };
+        }
       }
       // For endless mode, restart means starting a new run, so reset win tally
-      const newEndlessWins = prev.isEndlessModeActive ? 0 : prev.endlessWins;
+      const newEndlessWins = prev.isEndlessModeActive ? 0 : prev.endlessWins
       if (prev.isEndlessModeActive) {
-        saveWinTally(0); // Reset localStorage tally for a new endless run
+        saveWinTally(0) // Reset localStorage tally for a new endless run
       }
 
       return {
@@ -357,226 +334,187 @@ export default function CardGameArena() {
         aiDifficulty: newEndlessWins + 1,
         endlessTrophies: prev.endlessTrophies,
         isAchievementsOpen: false,
-      };
-    });
-    addToLog("Restarting current game mode.");
-  }, [addToLog]);
+      }
+    })
+    addToLog("Restarting current game mode.")
+  }, [addToLog])
 
   const openAchievements = useCallback(() => {
-    setGameState((prev) => ({ ...prev, isAchievementsOpen: true }));
-  }, []);
+    setGameState((prev) => ({ ...prev, isAchievementsOpen: true }))
+  }, [])
 
   const closeAchievements = useCallback(() => {
-    setGameState((prev) => ({ ...prev, isAchievementsOpen: false }));
-  }, []);
+    setGameState((prev) => ({ ...prev, isAchievementsOpen: false }))
+  }, [])
 
   const closeInstructions = useCallback(() => {
-    setGameState((prev) => ({ ...prev, isInstructionsOpen: false }));
-  }, []);
+    setGameState((prev) => ({ ...prev, isInstructionsOpen: false }))
+  }, [])
 
   const handleCardDetailView = useCallback((creature: Creature) => {
     setGameState((prev) => ({
       ...prev,
       selectedCardForDetails: creature,
       isCardDetailsOpen: true,
-    }));
-  }, []);
+    }))
+  }, [])
 
   const closeCardDetails = useCallback(() => {
     setGameState((prev) => ({
       ...prev,
       selectedCardForDetails: null,
       isCardDetailsOpen: false,
-    }));
-  }, []);
+    }))
+  }, [])
 
   const handleCreatureReplacementLogic = useCallback(
-    (
-      prevState: GameState,
-      playerType: "player" | "opponent",
-      newActiveCreature: Creature
-    ): GameState => {
-      const targetPlayerState =
-        playerType === "player" ? prevState.player : prevState.opponent;
-      const updatedActiveCreature = { ...newActiveCreature, isFaceUp: true };
+    (prevState: GameState, playerType: "player" | "opponent", newActiveCreature: Creature): GameState => {
+      const targetPlayerState = playerType === "player" ? prevState.player : prevState.opponent
+      const updatedActiveCreature = { ...newActiveCreature, isFaceUp: true }
 
-      const updatedBenchCreatures = targetPlayerState.benchCreatures.filter(
-        (c) => c.id !== newActiveCreature.id
-      );
+      const updatedBenchCreatures = targetPlayerState.benchCreatures.filter((c) => c.id !== newActiveCreature.id)
 
       // If the old active creature is not KO'd, add it back to the bench
-      if (
-        targetPlayerState.activeCreature &&
-        targetPlayerState.activeCreature.currentHp > 0
-      ) {
+      if (targetPlayerState.activeCreature && targetPlayerState.activeCreature.currentHp > 0) {
         updatedBenchCreatures.push({
           ...targetPlayerState.activeCreature,
           isFaceUp: true,
           turnsSurvived: 0,
-        });
+        })
       }
 
       const updatedPlayerState = {
         ...targetPlayerState,
         activeCreature: updatedActiveCreature,
         benchCreatures: updatedBenchCreatures,
-      };
+      }
 
       return {
         ...prevState,
         player: playerType === "player" ? updatedPlayerState : prevState.player,
-        opponent:
-          playerType === "opponent" ? updatedPlayerState : prevState.opponent,
+        opponent: playerType === "opponent" ? updatedPlayerState : prevState.opponent,
         replacementPhaseForPlayer: null,
-      };
+      }
     },
-    []
-  );
+    [],
+  )
 
   const applyDamage = useCallback(
-    (
-      attacker: Creature,
-      defender: Creature,
-      baseDamage: number,
-      isCriticalMiss = false
-    ): number => {
-      let finalDamage = baseDamage;
+    (attacker: Creature, defender: Creature, baseDamage: number, isCriticalMiss = false): number => {
+      let finalDamage = baseDamage
 
       // Evolution buffs (already in multiples of 10)
       if (attacker.stage === "Level 2") {
-        finalDamage += 10;
+        finalDamage += 10
       } else if (attacker.stage === "Level 3") {
-        finalDamage += 20;
+        finalDamage += 20
       }
 
       // AI difficulty buff (already in multiples of 5)
       if (gameState.turn === "opponent") {
-        finalDamage += (gameState.aiDifficulty - 1) * 5;
+        finalDamage += (gameState.aiDifficulty - 1) * 5
       }
 
       // Weakness/Resistance
       if (!isCriticalMiss) {
         if (defender.weakness === attacker.element) {
-          finalDamage += 10;
+          finalDamage += 10
         } else if (defender.resistance === attacker.element) {
           // Round to nearest 5 after reducing by 50%
-          const resistanceReduction = Math.floor(finalDamage * 0.5);
-          finalDamage -= resistanceReduction;
-          finalDamage = Math.ceil(finalDamage / 5) * 5; // Round up to nearest 5
-          finalDamage = Math.max(5, finalDamage); // Minimum 5 damage instead of 2
+          const resistanceReduction = Math.floor(finalDamage * 0.5)
+          finalDamage -= resistanceReduction
+          finalDamage = Math.ceil(finalDamage / 5) * 5 // Round up to nearest 5
+          finalDamage = Math.max(5, finalDamage) // Minimum 5 damage instead of 2
         }
       }
 
       // Evolution defense buffs
       if (defender.stage === "Level 2") {
-        finalDamage -= 10;
+        finalDamage -= 10
       } else if (defender.stage === "Level 3") {
-        finalDamage -= 20;
+        finalDamage -= 20
       }
 
       // Guard halving (round up to nearest 5)
       if (
-        (defender === gameState.player.activeCreature &&
-          gameState.playerIsGuarding) ||
-        (defender === gameState.opponent.activeCreature &&
-          gameState.opponentIsGuarding)
+        (defender === gameState.player.activeCreature && gameState.playerIsGuarding) ||
+        (defender === gameState.opponent.activeCreature && gameState.opponentIsGuarding)
       ) {
-        finalDamage = Math.ceil(finalDamage / 2);
-        finalDamage = Math.ceil(finalDamage / 5) * 5; // Round up to nearest 5
+        finalDamage = Math.ceil(finalDamage / 2)
+        finalDamage = Math.ceil(finalDamage / 5) * 5 // Round up to nearest 5
       }
 
       // Charge bonus (already in multiples of 10)
       if (
-        (attacker === gameState.player.activeCreature &&
-          gameState.playerIsCharged) ||
-        (attacker === gameState.opponent.activeCreature &&
-          gameState.opponentIsCharged)
+        (attacker === gameState.player.activeCreature && gameState.playerIsCharged) ||
+        (attacker === gameState.opponent.activeCreature && gameState.opponentIsCharged)
       ) {
-        finalDamage += 10;
+        finalDamage += 10
       }
 
       // Final minimum check
-      finalDamage = Math.max(5, finalDamage); // Minimum 5 damage instead of 1
+      finalDamage = Math.max(5, finalDamage) // Minimum 5 damage instead of 1
 
       // Add damage animation for the defender
-      addDamageAnimation(defender.instanceId, finalDamage);
+      addDamageAnimation(defender.instanceId, finalDamage)
 
       setGameState((prev) => {
-        const updatedPlayer = { ...prev.player };
-        const updatedOpponent = { ...prev.opponent };
+        const updatedPlayer = { ...prev.player }
+        const updatedOpponent = { ...prev.opponent }
 
         const shouldUpdatePlayer = isCriticalMiss
           ? prev.turn === "player" // Critical miss: damage the current turn's player
-          : prev.turn === "opponent"; // Normal attack: damage the opposite side
+          : prev.turn === "opponent" // Normal attack: damage the opposite side
 
         if (shouldUpdatePlayer) {
           // Update player's active creature if it's the defender
-          if (
-            prev.player.activeCreature &&
-            prev.player.activeCreature.instanceId === defender.instanceId
-          ) {
+          if (prev.player.activeCreature && prev.player.activeCreature.instanceId === defender.instanceId) {
             updatedPlayer.activeCreature = {
               ...prev.player.activeCreature,
-              currentHp: Math.max(
-                0,
-                prev.player.activeCreature.currentHp - finalDamage
-              ),
-            };
+              currentHp: Math.max(0, prev.player.activeCreature.currentHp - finalDamage),
+            }
           }
           // Update player's bench creatures
           updatedPlayer.benchCreatures = updatedPlayer.benchCreatures.map((c) =>
-            c.instanceId === defender.instanceId
-              ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) }
-              : c
-          );
+            c.instanceId === defender.instanceId ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) } : c,
+          )
         } else {
           // Update opponent's active creature if it's the defender
-          if (
-            prev.opponent.activeCreature &&
-            prev.opponent.activeCreature.instanceId === defender.instanceId
-          ) {
+          if (prev.opponent.activeCreature && prev.opponent.activeCreature.instanceId === defender.instanceId) {
             updatedOpponent.activeCreature = {
               ...prev.opponent.activeCreature,
-              currentHp: Math.max(
-                0,
-                prev.opponent.activeCreature.currentHp - finalDamage
-              ),
-            };
+              currentHp: Math.max(0, prev.opponent.activeCreature.currentHp - finalDamage),
+            }
           }
           // Update opponent's bench creatures
-          updatedOpponent.benchCreatures = updatedOpponent.benchCreatures.map(
-            (c) =>
-              c.instanceId === defender.instanceId
-                ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) }
-                : c
-          );
+          updatedOpponent.benchCreatures = updatedOpponent.benchCreatures.map((c) =>
+            c.instanceId === defender.instanceId ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) } : c,
+          )
         }
 
         return {
           ...prev,
           player: updatedPlayer,
           opponent: updatedOpponent,
-        };
-      });
+        }
+      })
 
-      const newHp = Math.max(0, defender.currentHp - finalDamage);
-      addToLog(
-        `${defender.name} took ${finalDamage} damage. HP: ${newHp}/${defender.maxHp}`
-      );
-      return newHp;
+      const newHp = Math.max(0, defender.currentHp - finalDamage)
+      addToLog(`${defender.name} took ${finalDamage} damage. HP: ${newHp}/${defender.maxHp}`)
+      return newHp
     },
-    [addToLog, addDamageAnimation, gameState.turn, gameState.aiDifficulty]
-  );
+    [addToLog, addDamageAnimation, gameState.turn, gameState.aiDifficulty],
+  )
 
   const handleEndlessNextBattleSetup = useCallback(() => {
     setGameState((prev) => {
-      if (!prev.selectedGameMode) return prev;
+      if (!prev.selectedGameMode) return prev
 
       // Apply win effects using the game-logic helper
       const updatedPlayerCreatures = [
         ...(prev.player.activeCreature ? [prev.player.activeCreature] : []),
         ...prev.player.benchCreatures,
-      ];
+      ]
       const {
         winTally: newWins,
         aiDifficulty: newAiDifficulty,
@@ -588,12 +526,12 @@ export default function CardGameArena() {
           playerElementals: updatedPlayerCreatures,
         },
         updatedPlayerCreatures,
-        prev.selectedGameMode
-      );
+        prev.selectedGameMode,
+      )
 
       // Re-distribute processed player creatures back to active/bench
-      let healedActive = processedPlayerCreatures[0] || null;
-      let healedBench = processedPlayerCreatures.slice(1);
+      let healedActive = processedPlayerCreatures[0] || null
+      let healedBench = processedPlayerCreatures.slice(1)
 
       // Revive KO'd creatures with 50% HP (rounded up)
       healedBench = healedBench.map((creature) => {
@@ -601,26 +539,21 @@ export default function CardGameArena() {
           return {
             ...creature,
             currentHp: Math.ceil(creature.maxHp * 0.5),
-          };
+          }
         }
-        return creature;
-      });
+        return creature
+      })
       if (healedActive && healedActive.currentHp <= 0) {
         healedActive = {
           ...healedActive,
           currentHp: Math.ceil(healedActive.maxHp * 0.5),
-        };
+        }
       }
 
       // Generate new opponent based on new win tally
-      const newOpponentCreatures = generateOpponentCreatures(
-        newWins,
-        prev.selectedGameMode
-      );
+      const newOpponentCreatures = generateOpponentCreatures(newWins, prev.selectedGameMode)
 
-      addToLog(
-        `Victory! You have ${newWins} wins. Prepare for the next challenger!`
-      );
+      addToLog(`Victory! You have ${newWins} wins. Prepare for the next challenger!`)
 
       return {
         ...prev,
@@ -658,37 +591,33 @@ export default function CardGameArena() {
         hasOpponentEvolved: false,
         isCriticalMiss: false,
         isCriticalHit: false,
-      };
-    });
-  }, [addToLog]);
+      }
+    })
+  }, [addToLog])
 
   const handleEndlessRunEnd = useCallback(() => {
     setGameState((prev) => {
-      const currentWins = prev.endlessWins;
-      const modeId = prev.selectedGameMode!.id;
-      const existingTrophy = prev.endlessTrophies[modeId] || 0;
-      const newTrophies = { ...prev.endlessTrophies };
+      const currentWins = prev.endlessWins
+      const modeId = prev.selectedGameMode!.id
+      const existingTrophy = prev.endlessTrophies[modeId] || 0
+      const newTrophies = { ...prev.endlessTrophies }
 
       if (currentWins > existingTrophy) {
-        addToLog(`New record! You achieved ${currentWins} wins!`);
+        addToLog(`New record! You achieved ${currentWins} wins!`)
         if (typeof window !== "undefined") {
-          localStorage.setItem(
-            `endless_trophy_${modeId}`,
-            currentWins.toString()
-          );
+          localStorage.setItem(`endless_trophy_${modeId}`, currentWins.toString())
         }
-        newTrophies[modeId] = currentWins;
+        newTrophies[modeId] = currentWins
       } else {
-        addToLog(`Your run ended with ${currentWins} wins.`);
+        addToLog(`Your run ended with ${currentWins} wins.`)
       }
 
       // Apply loss effects using the game-logic helper
-      const { winTally: resetWinTally, aiDifficulty: resetAiDifficulty } =
-        handleLoss({
-          winTally: prev.endlessWins,
-          aiDifficulty: prev.aiDifficulty,
-          playerElementals: [], // Not needed for loss logic, but part of interface
-        });
+      const { winTally: resetWinTally, aiDifficulty: resetAiDifficulty } = handleLoss({
+        winTally: prev.endlessWins,
+        aiDifficulty: prev.aiDifficulty,
+        playerElementals: [], // Not needed for loss logic, but part of interface
+      })
 
       return {
         ...prev,
@@ -699,110 +628,86 @@ export default function CardGameArena() {
         finalEndlessScore: currentWins, // Store the score BEFORE resetting
         endlessWins: resetWinTally, // Reset win tally in state
         aiDifficulty: resetAiDifficulty, // Reset AI difficulty in state
-      };
-    });
-  }, [addToLog]);
+      }
+    })
+  }, [addToLog])
 
   const checkWinCondition = useCallback(() => {
     setGameState((prev) => {
-      const newState = { ...prev };
-      let playerLost = false;
-      let opponentLost = false;
+      const newState = { ...prev }
+      let playerLost = false
+      let opponentLost = false
 
       if (newState.selectedGameMode?.id === "set-2") {
-        playerLost = !!(
-          newState.player.activeCreature &&
-          newState.player.activeCreature.currentHp <= 0
-        );
-        opponentLost = !!(
-          newState.opponent.activeCreature &&
-          newState.opponent.activeCreature.currentHp <= 0
-        );
+        playerLost = !!(newState.player.activeCreature && newState.player.activeCreature.currentHp <= 0)
+        opponentLost = !!(newState.opponent.activeCreature && newState.opponent.activeCreature.currentHp <= 0)
       } else {
         // Set 3 logic
         const isPlayerActiveDefeated = !!(
-          newState.player.activeCreature &&
-          newState.player.activeCreature.currentHp <= 0
-        );
-        const hasPlayerBench = newState.player.benchCreatures.some(
-          (c) => c.currentHp > 0
-        );
+          newState.player.activeCreature && newState.player.activeCreature.currentHp <= 0
+        )
+        const hasPlayerBench = newState.player.benchCreatures.some((c) => c.currentHp > 0)
         if (isPlayerActiveDefeated && !hasPlayerBench) {
-          playerLost = true;
+          playerLost = true
         } else if (isPlayerActiveDefeated && hasPlayerBench) {
-          addToLog("Player must choose a replacement.");
-          return { ...newState, replacementPhaseForPlayer: "player" };
+          addToLog("Player must choose a replacement.")
+          return { ...newState, replacementPhaseForPlayer: "player" }
         }
 
         const isOpponentActiveDefeated = !!(
-          newState.opponent.activeCreature &&
-          newState.opponent.activeCreature.currentHp <= 0
-        );
-        const hasOpponentBench = newState.opponent.benchCreatures.some(
-          (c) => c.currentHp > 0
-        );
+          newState.opponent.activeCreature && newState.opponent.activeCreature.currentHp <= 0
+        )
+        const hasOpponentBench = newState.opponent.benchCreatures.some((c) => c.currentHp > 0)
         if (isOpponentActiveDefeated && !hasOpponentBench) {
-          opponentLost = true;
+          opponentLost = true
         } else if (isOpponentActiveDefeated && hasOpponentBench) {
-          const viableBench = newState.opponent.benchCreatures.filter(
-            (c) => c.currentHp > 0
-          );
-          const replacement =
-            viableBench[Math.floor(Math.random() * viableBench.length)];
-          const stateAfterOpponentReplacement = handleCreatureReplacementLogic(
-            newState,
-            "opponent",
-            replacement
-          );
-          addToLog(`Opponent replaced with ${replacement.name}.`);
-          return stateAfterOpponentReplacement;
+          const viableBench = newState.opponent.benchCreatures.filter((c) => c.currentHp > 0)
+          const replacement = viableBench[Math.floor(Math.random() * viableBench.length)]
+          const stateAfterOpponentReplacement = handleCreatureReplacementLogic(newState, "opponent", replacement)
+          addToLog(`Opponent replaced with ${replacement.name}.`)
+          return stateAfterOpponentReplacement
         }
       }
 
       if (opponentLost) {
         if (newState.isEndlessModeActive) {
           // Defer to next state update cycle
-          setTimeout(() => handleEndlessNextBattleSetup(), 0);
-          return newState; // Return current state, next setup will be handled
+          setTimeout(() => handleEndlessNextBattleSetup(), 0)
+          return newState // Return current state, next setup will be handled
         } else {
-          addToLog("Opponent defeated! Player wins!");
+          addToLog("Opponent defeated! Player wins!")
           return {
             ...newState,
             isGameOver: true,
             winner: "player",
             gamePhase: "gameOver",
-          };
+          }
         }
       }
 
       if (playerLost) {
         if (newState.isEndlessModeActive) {
           // Defer to next state update cycle
-          setTimeout(() => handleEndlessRunEnd(), 0);
-          return newState; // Return current state, end run will be handled
+          setTimeout(() => handleEndlessRunEnd(), 0)
+          return newState // Return current state, end run will be handled
         } else {
-          addToLog("Player defeated! Opponent wins!");
+          addToLog("Player defeated! Opponent wins!")
           return {
             ...newState,
             isGameOver: true,
             winner: "opponent",
             gamePhase: "gameOver",
-          };
+          }
         }
       }
 
-      return newState;
-    });
-  }, [
-    addToLog,
-    handleCreatureReplacementLogic,
-    handleEndlessNextBattleSetup,
-    handleEndlessRunEnd,
-  ]);
+      return newState
+    })
+  }, [addToLog, handleCreatureReplacementLogic, handleEndlessNextBattleSetup, handleEndlessRunEnd])
 
   const endTurn = useCallback(
     (criticalHitOccurred = false) => {
-      console.log("endTurn called. Current turn:", gameState.turn);
+      console.log("endTurn called. Current turn:", gameState.turn)
 
       if (
         gameState.isGameOver ||
@@ -810,57 +715,45 @@ export default function CardGameArena() {
         gameState.replacementPhaseForPlayer ||
         gameState.isTaggingOut
       )
-        return;
+        return
       //@ts-ignore
       setGameState((prev) => {
-        const currentTurnPlayerType = prev.turn; // "player" or "opponent"
-        const currentTurnPlayerState =
-          prev.turn === "player" ? prev.player : prev.opponent;
+        const currentTurnPlayerType = prev.turn // "player" or "opponent"
+        const currentTurnPlayerState = prev.turn === "player" ? prev.player : prev.opponent
         const updatedActiveCreature = currentTurnPlayerState.activeCreature
           ? {
               ...currentTurnPlayerState.activeCreature,
-              turnsSurvived:
-                currentTurnPlayerState.activeCreature.turnsSurvived + 1,
+              turnsSurvived: currentTurnPlayerState.activeCreature.turnsSurvived + 1,
             }
-          : null;
+          : null
 
         const updatedPlayerState =
-          prev.turn === "player"
-            ? { ...prev.player, activeCreature: updatedActiveCreature }
-            : prev.player;
+          prev.turn === "player" ? { ...prev.player, activeCreature: updatedActiveCreature } : prev.player
         const updatedOpponentState =
-          prev.turn === "opponent"
-            ? { ...prev.opponent, activeCreature: updatedActiveCreature }
-            : prev.opponent;
+          prev.turn === "opponent" ? { ...prev.opponent, activeCreature: updatedActiveCreature } : prev.opponent
 
-        let nextTurn = prev.turn === "player" ? "opponent" : "player";
-        let newSkipNextTurnFor = prev.skipNextTurnFor;
+        let nextTurn = prev.turn === "player" ? "opponent" : "player"
+        let newSkipNextTurnFor = prev.skipNextTurnFor
 
         // If a critical hit just occurred, the *current* player (attacker) will skip their *next* turn.
         // This means we set the flag for them to skip when it becomes their turn again.
         if (criticalHitOccurred) {
-          newSkipNextTurnFor = currentTurnPlayerType;
+          newSkipNextTurnFor = currentTurnPlayerType
           addToLog(
             `${
               currentTurnPlayerType === "player" ? "Player" : "Opponent"
-            } will skip their next turn due to Critical Hit!`
-          );
+            } will skip their next turn due to Critical Hit!`,
+          )
         }
 
         // Check if the *next* player (who is about to start their turn) is supposed to skip
         if (newSkipNextTurnFor === nextTurn) {
-          addToLog(
-            `${nextTurn === "player" ? "Player" : "Opponent"} skips their turn!`
-          );
-          newSkipNextTurnFor = null; // Clear the flag after it's acted upon
-          nextTurn = nextTurn === "player" ? "opponent" : "player"; // Skip this player, move to the next
+          addToLog(`${nextTurn === "player" ? "Player" : "Opponent"} skips their turn!`)
+          newSkipNextTurnFor = null // Clear the flag after it's acted upon
+          nextTurn = nextTurn === "player" ? "opponent" : "player" // Skip this player, move to the next
         }
 
-        addToLog(
-          `Turn ended. It's now ${
-            nextTurn === "player" ? "your" : "opponent's"
-          } turn.`
-        );
+        addToLog(`Turn ended. It's now ${nextTurn === "player" ? "your" : "opponent's"} turn.`)
 
         return {
           ...prev,
@@ -875,61 +768,47 @@ export default function CardGameArena() {
             prev.isCorrupted && prev.corruptedTurnsRemaining > 0
               ? prev.corruptedTurnsRemaining - 1
               : prev.corruptedTurnsRemaining,
-          isCorrupted:
-            prev.isCorrupted && prev.corruptedTurnsRemaining > 1 ? true : false,
-          corruptedPlayer:
-            prev.isCorrupted && prev.corruptedTurnsRemaining > 1
-              ? prev.corruptedPlayer
-              : null,
+          isCorrupted: prev.isCorrupted && prev.corruptedTurnsRemaining > 1 ? true : false,
+          corruptedPlayer: prev.isCorrupted && prev.corruptedTurnsRemaining > 1 ? prev.corruptedPlayer : null,
           // Reset critical animations on turn end
           isCriticalMiss: false,
           isCriticalHit: false,
           needsReplacementRoll: false, // Ensure this is reset
-        };
-      });
+        }
+      })
 
       setGameState((prev) => {
         // Handle corruption end and announce it
-        const corruptionEnding =
-          prev.isCorrupted && prev.corruptedTurnsRemaining === 1;
+        const corruptionEnding = prev.isCorrupted && prev.corruptedTurnsRemaining === 1
         if (corruptionEnding) {
-          addToLog("The corrupted die's power fades away...");
+          addToLog("The corrupted die's power fades away...")
 
           // Apply Aftershock Penalty to the previously corrupted creature
           if (prev.corruptedPlayer) {
-            const corruptedPlayerState =
-              prev.corruptedPlayer === "player" ? prev.player : prev.opponent;
-            const corruptedCreature = corruptedPlayerState.activeCreature;
+            const corruptedPlayerState = prev.corruptedPlayer === "player" ? prev.player : prev.opponent
+            const corruptedCreature = corruptedPlayerState.activeCreature
 
             if (corruptedCreature && corruptedCreature.currentHp > 0) {
-              addToLog(
-                `${corruptedCreature.name} suffers Aftershock Penalty! +10 damage from corruption backlash!`
-              );
+              addToLog(`${corruptedCreature.name} suffers Aftershock Penalty! +10 damage from corruption backlash!`)
 
               // Apply the aftershock damage
-              const aftershockDamage = 10;
-              const newHp = Math.max(
-                0,
-                corruptedCreature.currentHp - aftershockDamage
-              );
+              const aftershockDamage = 10
+              const newHp = Math.max(0, corruptedCreature.currentHp - aftershockDamage)
 
               // Add damage animation
-              addDamageAnimation(corruptedCreature.id, aftershockDamage);
+              addDamageAnimation(corruptedCreature.id, aftershockDamage)
 
               // Update the creature's HP
               setTimeout(() => {
                 setGameState((aftershockState) => {
-                  const updatedPlayer = { ...aftershockState.player };
-                  const updatedOpponent = { ...aftershockState.opponent };
+                  const updatedPlayer = { ...aftershockState.player }
+                  const updatedOpponent = { ...aftershockState.opponent }
 
-                  if (
-                    prev.corruptedPlayer === "player" &&
-                    updatedPlayer.activeCreature?.id === corruptedCreature.id
-                  ) {
+                  if (prev.corruptedPlayer === "player" && updatedPlayer.activeCreature?.id === corruptedCreature.id) {
                     updatedPlayer.activeCreature = {
                       ...corruptedCreature,
                       currentHp: newHp,
-                    };
+                    }
                   } else if (
                     prev.corruptedPlayer === "opponent" &&
                     updatedOpponent.activeCreature?.id === corruptedCreature.id
@@ -937,26 +816,26 @@ export default function CardGameArena() {
                     updatedOpponent.activeCreature = {
                       ...corruptedCreature,
                       currentHp: newHp,
-                    };
+                    }
                   }
 
                   return {
                     ...aftershockState,
                     player: updatedPlayer,
                     opponent: updatedOpponent,
-                  };
-                });
+                  }
+                })
 
                 // Check for win condition after aftershock damage
                 setTimeout(() => {
-                  checkWinCondition();
-                }, 500);
-              }, 1000);
+                  checkWinCondition()
+                }, 500)
+              }, 1000)
             }
           }
         }
-        return prev;
-      });
+        return prev
+      })
     },
     [
       gameState.isGameOver,
@@ -965,16 +844,11 @@ export default function CardGameArena() {
       gameState.replacementPhaseForPlayer,
       addDamageAnimation,
       checkWinCondition,
-    ]
-  );
+    ],
+  )
 
   const rollDice = useCallback(() => {
-    console.log(
-      "rollDice called. Current turn:",
-      gameState.turn,
-      "hasRolledThisTurn:",
-      gameState.hasRolledThisTurn
-    );
+    console.log("rollDice called. Current turn:", gameState.turn, "hasRolledThisTurn:", gameState.hasRolledThisTurn)
     if (
       gameState.isRolling ||
       gameState.isGameOver ||
@@ -983,7 +857,7 @@ export default function CardGameArena() {
       gameState.replacementPhaseForPlayer ||
       gameState.isTaggingOut
     )
-      return;
+      return
 
     setGameState((prev) => ({
       ...prev,
@@ -999,25 +873,23 @@ export default function CardGameArena() {
       // Reset critical animations when starting new roll
       isCriticalMiss: false,
       isCriticalHit: false,
-    }));
-    addToLog(
-      `${gameState.turn === "player" ? "Player" : "Opponent"} rolls the dice...`
-    );
+    }))
+    addToLog(`${gameState.turn === "player" ? "Player" : "Opponent"} rolls the dice...`)
 
     // Clear any previous timers to prevent conflicts from previous rolls
-    if (rollTimerRef.current) clearTimeout(rollTimerRef.current);
-    if (damageTimerRef.current) clearTimeout(damageTimerRef.current);
-    if (endTurnTimerRef.current) clearTimeout(endTurnTimerRef.current);
+    if (rollTimerRef.current) clearTimeout(rollTimerRef.current)
+    if (damageTimerRef.current) clearTimeout(damageTimerRef.current)
+    if (endTurnTimerRef.current) clearTimeout(endTurnTimerRef.current)
 
     rollTimerRef.current = setTimeout(() => {
-      const newValue = Math.floor(Math.random() * 6) + 1;
+      const newValue = Math.floor(Math.random() * 6) + 1
 
       // Check for corruption trigger
-      let shouldTriggerCorruption = false;
+      let shouldTriggerCorruption = false
 
       // Check for critical miss (roll of 1) and critical hit (roll of 6)
-      const isCriticalMiss = newValue === 1;
-      const isCriticalHit = newValue === 6;
+      const isCriticalMiss = newValue === 1
+      const isCriticalHit = newValue === 6
 
       if (
         !gameState.isCorrupted &&
@@ -1026,7 +898,7 @@ export default function CardGameArena() {
         gameState.hasPlayerEvolved &&
         gameState.hasOpponentEvolved
       ) {
-        shouldTriggerCorruption = true;
+        shouldTriggerCorruption = true
       }
 
       setGameState((prev) => ({
@@ -1040,32 +912,22 @@ export default function CardGameArena() {
         isCriticalHit: isCriticalHit,
         // Trigger corruption if conditions are met
         isCorrupted: shouldTriggerCorruption ? true : prev.isCorrupted,
-        corruptedTurnsRemaining: shouldTriggerCorruption
-          ? 3
-          : prev.corruptedTurnsRemaining,
-        corruptedPlayer: shouldTriggerCorruption
-          ? prev.turn
-          : prev.corruptedPlayer,
-      }));
+        corruptedTurnsRemaining: shouldTriggerCorruption ? 3 : prev.corruptedTurnsRemaining,
+        corruptedPlayer: shouldTriggerCorruption ? prev.turn : prev.corruptedPlayer,
+      }))
 
       if (shouldTriggerCorruption) {
-        addToLog(`Consecutive ${newValue}s rolled! The die becomes CORRUPTED!`);
+        addToLog(`Consecutive ${newValue}s rolled! The die becomes CORRUPTED!`)
       } else {
-        addToLog(`Dice rolled: ${newValue}!`);
+        addToLog(`Dice rolled: ${newValue}!`)
       }
 
-      const attacker =
-        gameState.turn === "player"
-          ? gameState.player.activeCreature
-          : gameState.opponent.activeCreature;
-      const defender =
-        gameState.turn === "player"
-          ? gameState.opponent.activeCreature
-          : gameState.player.activeCreature;
+      const attacker = gameState.turn === "player" ? gameState.player.activeCreature : gameState.opponent.activeCreature
+      const defender = gameState.turn === "player" ? gameState.opponent.activeCreature : gameState.player.activeCreature
 
       if (!attacker || !defender) {
-        addToLog("Error: Active creatures not found for combat.");
-        return;
+        addToLog("Error: Active creatures not found for combat.")
+        return
       }
 
       setGameState((prev) => ({
@@ -1074,55 +936,51 @@ export default function CardGameArena() {
         opponentActiveIsAttacking: prev.turn === "opponent",
         playerActiveIsDefending: prev.turn === "opponent",
         opponentActiveIsDefending: prev.turn === "player",
-      }));
+      }))
 
       damageTimerRef.current = setTimeout(() => {
-        let damage = 0;
-        const isCriticalMiss = newValue === 1;
-        const isCriticalHit = newValue === 6;
+        let damage = 0
+        const isCriticalMiss = newValue === 1
+        const isCriticalHit = newValue === 6
 
         switch (newValue) {
           case 1:
-            damage = 10;
-            addToLog(`${attacker.name} suffered a Critical Miss!`);
-            applyDamage(attacker, attacker, damage, true);
-            break;
+            damage = 10
+            addToLog(`${attacker.name} suffered a Critical Miss!`)
+            applyDamage(attacker, attacker, damage, true)
+            break
           case 2:
           case 3:
-            damage = 10;
-            addToLog(`${attacker.name} landed a Standard Hit!`);
-            applyDamage(attacker, defender, damage);
-            break;
+            damage = 10
+            addToLog(`${attacker.name} landed a Standard Hit!`)
+            applyDamage(attacker, defender, damage)
+            break
           case 4:
           case 5:
-            damage = 20;
-            addToLog(`${attacker.name} landed a Power Hit!`);
-            applyDamage(attacker, defender, damage);
-            break;
+            damage = 20
+            addToLog(`${attacker.name} landed a Power Hit!`)
+            applyDamage(attacker, defender, damage)
+            break
           case 6:
-            damage = 50;
-            addToLog(`${attacker.name} landed a Critical Hit!`);
-            applyDamage(attacker, defender, damage);
-            addToLog(
-              `${attacker.name} deals massive damage but forfeits their next turn!`
-            );
-            break;
+            damage = 50
+            addToLog(`${attacker.name} landed a Critical Hit!`)
+            applyDamage(attacker, defender, damage)
+            addToLog(`${attacker.name} deals massive damage but forfeits their next turn!`)
+            break
         }
 
         // Apply visual effects based on the roll result
         setGameState((prev) => {
-          const isPlayerAttacking = prev.turn === "player";
+          const isPlayerAttacking = prev.turn === "player"
 
           return {
             ...prev,
             playerActiveIsShaking:
-              (isPlayerAttacking && isCriticalMiss) ||
-              (!isPlayerAttacking && newValue >= 2 && newValue <= 6),
+              (isPlayerAttacking && isCriticalMiss) || (!isPlayerAttacking && newValue >= 2 && newValue <= 6),
             opponentActiveIsShaking:
-              (!isPlayerAttacking && isCriticalMiss) ||
-              (isPlayerAttacking && newValue >= 2 && newValue <= 6),
-          };
-        });
+              (!isPlayerAttacking && isCriticalMiss) || (isPlayerAttacking && newValue >= 2 && newValue <= 6),
+          }
+        })
 
         endTurnTimerRef.current = setTimeout(() => {
           setGameState((prev) => ({
@@ -1133,154 +991,133 @@ export default function CardGameArena() {
             opponentActiveIsShaking: false,
             playerActiveIsDefending: false,
             opponentActiveIsDefending: false,
-          }));
+          }))
 
           // Check win condition before ending turn
-          checkWinCondition();
+          checkWinCondition()
 
           // End the current turn and transition to the defending player
           // Add a small delay here to allow React to process checkWinCondition's state update
           setTimeout(() => {
-            endTurn(isCriticalHit);
-          }, 50); // Small delay to allow re-render from checkWinCondition to settle
-        }, 300);
-      }, 500);
-    }, 1000);
-  }, [
-    gameState,
-    addToLog,
-    applyDamage,
-    checkWinCondition,
-    endTurn,
-    rollTimerRef,
-    damageTimerRef,
-    endTurnTimerRef,
-  ]);
+            endTurn(isCriticalHit)
+          }, 50) // Small delay to allow re-render from checkWinCondition to settle
+        }, 300)
+      }, 500)
+    }, 1000)
+  }, [gameState, addToLog, applyDamage, checkWinCondition, endTurn, rollTimerRef, damageTimerRef, endTurnTimerRef])
 
   // Removed rollReplacementDice as it's no longer needed.
 
   const handleTagOut = useCallback(
     (playerType: "player" | "opponent", benchCreature: Creature) => {
-      if (gameState.selectedGameMode?.id !== "set-3") return; // Tag out only allowed in Set 3
+      if (gameState.selectedGameMode?.id !== "set-3") return // Tag out only allowed in Set 3
       setGameState((prev) => {
-        const currentPlayerState =
-          playerType === "player" ? prev.player : prev.opponent;
+        const currentPlayerState = playerType === "player" ? prev.player : prev.opponent
 
         if (!currentPlayerState.activeCreature) {
-          addToLog("No active creature to tag out.");
-          return { ...prev, isTaggingOut: false };
+          addToLog("No active creature to tag out.")
+          return { ...prev, isTaggingOut: false }
         }
 
-        const benchIndex = currentPlayerState.benchCreatures.findIndex(
-          (c) => c.id === benchCreature.id
-        );
+        const benchIndex = currentPlayerState.benchCreatures.findIndex((c) => c.id === benchCreature.id)
         if (benchIndex === -1) {
-          addToLog("Selected creature not found on bench.");
-          return { ...prev, isTaggingOut: false };
+          addToLog("Selected creature not found on bench.")
+          return { ...prev, isTaggingOut: false }
         }
 
-        const newBenchCreatures = [...currentPlayerState.benchCreatures];
+        const newBenchCreatures = [...currentPlayerState.benchCreatures]
         const oldActiveCreature = {
           ...currentPlayerState.activeCreature,
           isFaceUp: true,
           turnsSurvived: 0,
-        }; // Reset turns survived when tagged out
+        } // Reset turns survived when tagged out
         const newActiveCreature = {
           ...newBenchCreatures[benchIndex],
           isFaceUp: true,
           turnsSurvived: 0,
-        }; // Reset turns survived when tagged in
+        } // Reset turns survived when tagged in
 
-        newBenchCreatures[benchIndex] = oldActiveCreature;
+        newBenchCreatures[benchIndex] = oldActiveCreature
 
         const updatedPlayerState = {
           ...currentPlayerState,
           activeCreature: newActiveCreature,
           benchCreatures: newBenchCreatures,
-        };
+        }
 
         addToLog(
           `${playerType === "player" ? "Player" : "Opponent"} tagged out ${
             oldActiveCreature.name
-          } for ${newActiveCreature.name}.`
-        );
+          } for ${newActiveCreature.name}.`,
+        )
 
         return {
           ...prev,
           player: playerType === "player" ? updatedPlayerState : prev.player,
-          opponent:
-            playerType === "opponent" ? updatedPlayerState : prev.opponent,
+          opponent: playerType === "opponent" ? updatedPlayerState : prev.opponent,
           isTaggingOut: false,
-        };
-      });
+        }
+      })
 
       // End the turn after tagging out
       setTimeout(() => {
-        endTurn();
-      }, 1000);
+        endTurn()
+      }, 1000)
     },
-    [gameState.selectedGameMode?.id, addToLog, endTurn]
-  );
+    [gameState.selectedGameMode?.id, addToLog, endTurn],
+  )
 
   const handleEvolution = useCallback(
     (playerType: "player" | "opponent") => {
-      if (gameState.selectedGameMode?.id !== "set-3") return; // Evolution only allowed in Set 3
+      if (gameState.selectedGameMode?.id !== "set-3") return // Evolution only allowed in Set 3
       setGameState((prev) => {
-        const currentPlayerState =
-          playerType === "player" ? prev.player : prev.opponent;
-        const active = currentPlayerState.activeCreature;
-        const currentMode = prev.selectedGameMode;
+        const currentPlayerState = playerType === "player" ? prev.player : prev.opponent
+        const active = currentPlayerState.activeCreature
+        const currentMode = prev.selectedGameMode
 
-        if (!active || !currentMode) return prev;
+        if (!active || !currentMode) return prev
 
-        const nextEvolution = getNextEvolution(active);
+        const nextEvolution = getNextEvolution(active)
 
-        if (
-          nextEvolution &&
-          currentMode.allowEvolution &&
-          active.turnsSurvived >= currentMode.evolutionTurnsRequired
-        ) {
+        if (nextEvolution && currentMode.allowEvolution && active.turnsSurvived >= currentMode.evolutionTurnsRequired) {
           const evolvedCreature: Creature = {
             ...nextEvolution,
             currentHp: nextEvolution.maxHp,
             turnsSurvived: 0,
             isFaceUp: true,
-          };
+          }
 
-          addToLog(`${active.name} evolved into ${evolvedCreature.name}!`);
+          addToLog(`${active.name} evolved into ${evolvedCreature.name}!`)
 
           const updatedPlayerState = {
             ...currentPlayerState,
             activeCreature: evolvedCreature,
-          };
+          }
 
           const newState = {
             ...prev,
             player: playerType === "player" ? updatedPlayerState : prev.player,
-            opponent:
-              playerType === "opponent" ? updatedPlayerState : prev.opponent,
+            opponent: playerType === "opponent" ? updatedPlayerState : prev.opponent,
             hasRolledThisTurn: true,
             // Track evolution for corruption mechanic
-            hasPlayerEvolved:
-              playerType === "player" ? true : prev.hasPlayerEvolved,
-            hasOpponentEvolved:
-              playerType === "opponent" ? true : prev.hasOpponentEvolved,
-          };
+            hasPlayerEvolved: playerType === "player" ? true : prev.hasPlayerEvolved,
+            hasOpponentEvolved: playerType === "opponent" ? true : prev.hasOpponentEvolved,
+          }
 
           // End the turn after evolution for both player and opponent
           setTimeout(() => {
-            endTurn();
-          }, 1500);
+            endTurn()
+          }, 1500)
 
-          return newState;
+          return newState
         } else {
-          addToLog("Evolution conditions not met.");
-          return prev;
+          addToLog("Evolution conditions not met.")
+          return prev
         }
-      });
+      })
     },
-    [gameState.selectedGameMode?.id, addToLog, endTurn]
-  );
+    [gameState.selectedGameMode?.id, addToLog, endTurn],
+  )
 
   const handleModeSelection = useCallback(
     (mode: GameMode) => {
@@ -1289,16 +1126,16 @@ export default function CardGameArena() {
         selectedGameMode: mode,
         gamePhase: "modeSelection", // Stay in modeSelection phase
         selectionSubPhase: "chooseChallengeType", // Set new sub-phase
-      }));
-      addToLog(`You selected ${mode.name}. Choose your challenge.`);
+      }))
+      addToLog(`You selected ${mode.name}. Choose your challenge.`)
     },
-    [addToLog]
-  );
+    [addToLog],
+  )
 
   const handleChallengeSelection = (isEndless: boolean) => {
     setGameState((prev) => {
-      const newEndlessWins = isEndless ? loadWinTally() : 0; // Load existing tally for endless, or reset for standard
-      const newAiDifficulty = newEndlessWins + 1;
+      const newEndlessWins = isEndless ? loadWinTally() : 0 // Load existing tally for endless, or reset for standard
+      const newAiDifficulty = newEndlessWins + 1
 
       return {
         ...prev,
@@ -1307,12 +1144,10 @@ export default function CardGameArena() {
         aiDifficulty: newAiDifficulty,
         gamePhase: "instructions",
         selectionSubPhase: null,
-      };
-    });
-    addToLog(
-      isEndless ? "Endless Challenge selected!" : "Standard Match selected."
-    );
-  };
+      }
+    })
+    addToLog(isEndless ? "Endless Challenge selected!" : "Standard Match selected.")
+  }
 
   useEffect(() => {
     console.log("AI useEffect triggered. Current state:", {
@@ -1324,7 +1159,7 @@ export default function CardGameArena() {
       replacementPhaseForPlayer: gameState.replacementPhaseForPlayer,
       isTaggingOut: gameState.isTaggingOut,
       needsReplacementRoll: gameState.needsReplacementRoll,
-    });
+    })
 
     if (
       gameState.gamePhase === "inGame" &&
@@ -1336,63 +1171,56 @@ export default function CardGameArena() {
       !gameState.isTaggingOut &&
       !gameState.needsReplacementRoll
     ) {
-      console.log("AI is taking its turn!");
+      console.log("AI is taking its turn!")
 
       // Add a delay to make AI actions feel more natural
       const aiTurnTimeout = setTimeout(() => {
-        const opponentActive = gameState.opponent.activeCreature;
-        const playerActive = gameState.player.activeCreature;
-        const currentMode = gameState.selectedGameMode;
+        const opponentActive = gameState.opponent.activeCreature
+        const playerActive = gameState.player.activeCreature
+        const currentMode = gameState.selectedGameMode
 
         if (!opponentActive || !playerActive || !currentMode) {
-          console.log("Missing creatures or game mode, ending turn");
-          return;
+          console.log("Missing creatures or game mode, ending turn")
+          return
         }
 
         // AI logic for Set 3 (Evolution Mode)
         if (currentMode.id === "set-3") {
-          const nextEvolution = getNextEvolution(opponentActive);
+          const nextEvolution = getNextEvolution(opponentActive)
           if (
             nextEvolution &&
             currentMode.allowEvolution &&
             opponentActive.turnsSurvived >= currentMode.evolutionTurnsRequired
           ) {
-            addToLog("Opponent attempts to evolve!");
+            addToLog("Opponent attempts to evolve!")
             // Call evolution after a short delay
-            setTimeout(() => handleEvolution("opponent"), 500);
-            return;
+            setTimeout(() => handleEvolution("opponent"), 500)
+            return
           } else {
-            const canTagOut = gameState.opponent.benchCreatures.some(
-              (c) => c.currentHp > 0
-            );
-            const hasWeakness =
-              opponentActive.weakness === playerActive.element;
+            const canTagOut = gameState.opponent.benchCreatures.some((c) => c.currentHp > 0)
+            const hasWeakness = opponentActive.weakness === playerActive.element
 
             if (hasWeakness && canTagOut && Math.random() < 0.7) {
               // 70% chance to tag out when weak
-              const viableBenchCreature =
-                gameState.opponent.benchCreatures.find((c) => c.currentHp > 0);
+              const viableBenchCreature = gameState.opponent.benchCreatures.find((c) => c.currentHp > 0)
               if (viableBenchCreature) {
-                addToLog("Opponent tags out to avoid weakness!");
+                addToLog("Opponent tags out to avoid weakness!")
                 // Call tag out after a short delay
-                setTimeout(
-                  () => handleTagOut("opponent", viableBenchCreature),
-                  500
-                );
-                return;
+                setTimeout(() => handleTagOut("opponent", viableBenchCreature), 500)
+                return
               }
             }
           }
         }
 
         // Default action: roll dice
-        addToLog("Opponent rolls the dice.");
+        addToLog("Opponent rolls the dice.")
         // Call rollDice after a short delay
-        setTimeout(() => rollDice(), 500);
-      }, 1000); // 1 second delay to make AI actions feel more natural
+        setTimeout(() => rollDice(), 500)
+      }, 1000) // 1 second delay to make AI actions feel more natural
 
       // Cleanup timeout on unmount or dependency change
-      return () => clearTimeout(aiTurnTimeout);
+      return () => clearTimeout(aiTurnTimeout)
     }
   }, [
     gameState.gamePhase,
@@ -1410,75 +1238,62 @@ export default function CardGameArena() {
     handleEvolution,
     handleTagOut,
     addToLog,
-  ]);
+  ])
 
   const initiateGameSetup = useCallback(() => {
-    setGameState((prev) => ({ ...prev, gamePhase: "modeSelection" }));
-    addToLog("Select a game mode to begin!");
-  }, [addToLog]);
+    setGameState((prev) => ({ ...prev, gamePhase: "modeSelection" }))
+    addToLog("Select a game mode to begin!")
+  }, [addToLog])
 
   const initializeGameRostersAndProceedToCoinToss = useCallback(
     (playerCreatureIds: string[], selectedMode: GameMode) => {
       setGameState((prev) => {
         // Always create a new instance for each creature
-        const selectedPlayerCreatureInstances: Creature[] =
-          playerCreatureIds.map((id) => {
-            const template = getCreatureById(id);
-            if (!template) throw new Error(`Creature with ID ${id} not found.`);
-            const creatureMaxHp =
-              selectedMode.id === "set-2"
-                ? template.maxHp
-                : selectedMode.startingHp;
-            // Create a new instance for the player
-            return createCreature(
-              template.id,
-              template.name,
-              template.element,
-              creatureMaxHp,
-              template.weakness,
-              template.resistance,
-              template.ability,
-              template.stage,
-              template.evolutionLine
-            );
-          });
+        const selectedPlayerCreatureInstances: Creature[] = playerCreatureIds.map((id) => {
+          const template = getCreatureById(id)
+          if (!template) throw new Error(`Creature with ID ${id} not found.`)
+          const creatureMaxHp = selectedMode.id === "set-2" ? template.maxHp : selectedMode.startingHp
+          // Create a new instance for the player
+          return createCreature(
+            template.id,
+            template.name,
+            template.element,
+            creatureMaxHp,
+            template.weakness,
+            template.resistance,
+            template.ability,
+            template.stage,
+            template.evolutionLine,
+          )
+        })
 
         const playerActive = {
           ...selectedPlayerCreatureInstances[0],
           isFaceUp: false,
-        };
-        const playerBench = selectedPlayerCreatureInstances
-          .slice(1)
-          .map((c) => ({ ...c, isFaceUp: false }));
+        }
+        const playerBench = selectedPlayerCreatureInstances.slice(1).map((c) => ({ ...c, isFaceUp: false }))
 
         // Generate opponent creatures using the helper function
-        const opponentCreatureInstances = generateOpponentCreatures(
-          prev.endlessWins,
-          selectedMode
-        ).map((template) =>
+        const opponentCreatureInstances = generateOpponentCreatures(prev.endlessWins, selectedMode).map((template) =>
           // Create a new instance for the opponent, even if same as player
           createCreature(
             template.id,
             template.name,
             template.element,
-            selectedMode.id === "set-2"
-              ? template.maxHp
-              : selectedMode.startingHp,
+            selectedMode.id === "set-2" ? template.maxHp : selectedMode.startingHp,
             template.weakness,
             template.resistance,
             template.ability,
             template.stage,
-            template.evolutionLine
-          )
-        );
+            template.evolutionLine,
+          ),
+        )
 
         const opponentActive = {
           ...opponentCreatureInstances[0],
           isFaceUp: false,
-        };
-        const opponentBench = opponentCreatureInstances
-          .slice(1)
-          .map((c) => ({ ...c, isFaceUp: false }));
+        }
+        const opponentBench = opponentCreatureInstances.slice(1).map((c) => ({ ...c, isFaceUp: false }))
 
         return {
           ...prev,
@@ -1512,44 +1327,38 @@ export default function CardGameArena() {
           damagedCreatures: new Set(),
           selectedCardForDetails: null,
           isCardDetailsOpen: false,
-        };
-      });
+        }
+      })
 
-      addToLog("Rosters confirmed. Flipping a coin to see who goes first...");
+      addToLog("Rosters confirmed. Flipping a coin to see who goes first...")
 
       setTimeout(() => {
         // Determine coin flip result
-        const coinFlip = Math.random() < 0.5;
-        const coinResult: "Heads" | "Tails" = coinFlip ? "Heads" : "Tails";
-        const firstPlayer: "player" | "opponent" = coinFlip
-          ? "player"
-          : "opponent";
+        const coinFlip = Math.random() < 0.5
+        const coinResult: "Heads" | "Tails" = coinFlip ? "Heads" : "Tails"
+        const firstPlayer: "player" | "opponent" = coinFlip ? "player" : "opponent"
 
         // Update state with coin flip result
         setGameState((prev) => ({
           ...prev,
           coinFlipResult: coinResult,
-        }));
+        }))
 
-        addToLog(
-          `Coin toss result: ${coinResult}! ${
-            firstPlayer === "player" ? "You" : "Opponent"
-          } go first!`
-        );
+        addToLog(`Coin toss result: ${coinResult}! ${firstPlayer === "player" ? "You" : "Opponent"} go first!`)
 
         // Wait a bit longer to show the result, then proceed to game
         setTimeout(() => {
           setGameState((prev) => {
             const updatedPlayerActive = prev.player.activeCreature
               ? { ...prev.player.activeCreature, isFaceUp: true }
-              : null;
+              : null
             const updatedPlayerBench = prev.player.benchCreatures.map((c) => ({
               ...c,
               isFaceUp: true,
-            }));
+            }))
             const updatedOpponentActive = prev.opponent.activeCreature
               ? { ...prev.opponent.activeCreature, isFaceUp: true }
-              : null;
+              : null
 
             return {
               ...prev,
@@ -1565,40 +1374,36 @@ export default function CardGameArena() {
                 ...prev.opponent,
                 activeCreature: updatedOpponentActive,
               },
-            };
-          });
-        }, 3000);
-      }, 2000);
+            }
+          })
+        }, 3000)
+      }, 2000)
     },
-    [addToLog, gameState.endlessWins] // Add endlessWins to dependency array
-  );
+    [addToLog, gameState.endlessWins], // Add endlessWins to dependency array
+  )
 
   const handleElementSelection = useCallback(
     (element: Element) => {
-      console.log(`Selected element: ${element}`);
-      let creaturesForSelection: Creature[] = [];
-      let nextSubPhase: GameState["selectionSubPhase"] = null;
+      console.log(`Selected element: ${element}`)
+      let creaturesForSelection: Creature[] = []
+      let nextSubPhase: GameState["selectionSubPhase"] = null
 
       if (gameState.selectedGameMode?.id === "set-2") {
-        creaturesForSelection = getAllLevel3Creatures().filter(
-          (c) => c.element === element
-        );
-        nextSubPhase = "chooseSpecificCreatureForSet2";
+        creaturesForSelection = getAllLevel3Creatures().filter((c) => c.element === element)
+        nextSubPhase = "chooseSpecificCreatureForSet2"
       } else {
         // Set 3
-        creaturesForSelection = getAllBasicCreatures().filter(
-          (c) => c.element === element
-        );
-        nextSubPhase = "chooseCreature";
+        creaturesForSelection = getAllBasicCreatures().filter((c) => c.element === element)
+        nextSubPhase = "chooseCreature"
       }
 
       if (creaturesForSelection.length === 0) {
         addToLog(
           `No ${
             gameState.selectedGameMode?.id === "set-2" ? "Level 3" : "basic"
-          } ${element} creatures available. Please choose another element.`
-        );
-        return;
+          } ${element} creatures available. Please choose another element.`,
+        )
+        return
       }
 
       setGameState((prev) => ({
@@ -1606,145 +1411,118 @@ export default function CardGameArena() {
         currentElementSelection: element,
         selectionSubPhase: nextSubPhase,
         creaturesToChooseFrom: creaturesForSelection,
-      }));
-      addToLog(`You chose the ${element} element. Now pick a creature.`);
+      }))
+      addToLog(`You chose the ${element} element. Now pick a creature.`)
     },
-    [gameState.selectedGameMode, addToLog]
-  );
+    [gameState.selectedGameMode, addToLog],
+  )
 
   const proceedFromInstructions = useCallback(() => {
     if (!gameState.selectedGameMode) {
-      addToLog("Error: Game mode not selected.");
-      return;
+      addToLog("Error: Game mode not selected.")
+      return
     }
 
     setGameState((prev) => ({
       ...prev,
       gamePhase: "creatureSelection",
       selectionSubPhase: "chooseElement",
-    }));
+    }))
 
-    const creatureText =
-      gameState.selectedGameMode.playerCreatureCount > 1
-        ? "creatures"
-        : "creature";
-    addToLog(`Now choose your ${creatureText} for battle!`);
-  }, [gameState.selectedGameMode, addToLog]);
+    const creatureText = gameState.selectedGameMode.playerCreatureCount > 1 ? "creatures" : "creature"
+    addToLog(`Now choose your ${creatureText} for battle!`)
+  }, [gameState.selectedGameMode, addToLog])
 
   // New handler for Set 2 creature selection
   const handleFinalSet2CreatureSelection = useCallback(
     (creatureId: string) => {
-      if (gameState.selectedGameMode?.id !== "set-2") return;
+      if (gameState.selectedGameMode?.id !== "set-2") return
 
-      const selectedCreature = getCreatureById(creatureId);
+      const selectedCreature = getCreatureById(creatureId)
       if (!selectedCreature) {
-        addToLog("Error: Selected creature not found.");
-        return;
+        addToLog("Error: Selected creature not found.")
+        return
       }
 
-      initializeGameRostersAndProceedToCoinToss(
-        [creatureId],
-        gameState.selectedGameMode
-      );
-      addToLog(`Selected ${selectedCreature.name} for Set 2.`);
+      initializeGameRostersAndProceedToCoinToss([creatureId], gameState.selectedGameMode)
+      addToLog(`Selected ${selectedCreature.name} for Set 2.`)
     },
-    [
-      gameState.selectedGameMode,
-      addToLog,
-      initializeGameRostersAndProceedToCoinToss,
-    ]
-  );
+    [gameState.selectedGameMode, addToLog, initializeGameRostersAndProceedToCoinToss],
+  )
 
   const handleCreatureSelection = useCallback(
     (creatureId: string) => {
       // This function is only for Set 3 (multi-creature selection)
-      if (gameState.selectedGameMode?.id === "set-2") return;
+      if (gameState.selectedGameMode?.id === "set-2") return
 
       setGameState((prev) => {
-        const currentSelection = [...prev.playerSelectedCreatureIds];
-        const selectedCreature = getCreatureById(creatureId);
-        const maxCreatures = prev.selectedGameMode?.playerCreatureCount || 3;
+        const currentSelection = [...prev.playerSelectedCreatureIds]
+        const selectedCreature = getCreatureById(creatureId)
+        const maxCreatures = prev.selectedGameMode?.playerCreatureCount || 3
 
         if (!selectedCreature) {
-          addToLog("Error: Creature not found.");
-          return prev;
+          addToLog("Error: Creature not found.")
+          return prev
         }
 
         if (currentSelection.includes(creatureId)) {
-          addToLog(`${selectedCreature.name} is already in your roster.`);
-          return prev;
+          addToLog(`${selectedCreature.name} is already in your roster.`)
+          return prev
         }
 
         if (currentSelection.length < maxCreatures) {
-          currentSelection.push(creatureId);
-          addToLog(
-            `Added ${selectedCreature.name} (${selectedCreature.element}) to your roster.`
-          );
+          currentSelection.push(creatureId)
+          addToLog(`Added ${selectedCreature.name} (${selectedCreature.element}) to your roster.`)
         } else {
-          addToLog(
-            `Your roster is full (${maxCreatures} creatures selected). Remove one to add another.`
-          );
+          addToLog(`Your roster is full (${maxCreatures} creatures selected). Remove one to add another.`)
         }
 
-        const nextSubPhase =
-          currentSelection.length < maxCreatures ? "chooseElement" : null;
+        const nextSubPhase = currentSelection.length < maxCreatures ? "chooseElement" : null
         return {
           ...prev,
           playerSelectedCreatureIds: currentSelection,
-          currentElementSelection:
-            nextSubPhase === "chooseElement"
-              ? null
-              : prev.currentElementSelection,
+          currentElementSelection: nextSubPhase === "chooseElement" ? null : prev.currentElementSelection,
           selectionSubPhase: nextSubPhase,
-        };
-      });
+        }
+      })
     },
-    [addToLog]
-  );
+    [addToLog],
+  )
 
   const handleRemoveSelectedCreature = useCallback(
     (indexToRemove: number) => {
       // This function is only for Set 3 (multi-creature selection)
-      if (gameState.selectedGameMode?.id === "set-2") return;
+      if (gameState.selectedGameMode?.id === "set-2") return
 
       setGameState((prev) => {
-        const currentSelection = [...prev.playerSelectedCreatureIds];
+        const currentSelection = [...prev.playerSelectedCreatureIds]
         if (indexToRemove >= 0 && indexToRemove < currentSelection.length) {
-          const removedCreatureId = currentSelection[indexToRemove];
-          currentSelection.splice(indexToRemove, 1);
-          addToLog(
-            `Removed ${
-              getCreatureById(removedCreatureId)?.name
-            } from your roster.`
-          );
+          const removedCreatureId = currentSelection[indexToRemove]
+          currentSelection.splice(indexToRemove, 1)
+          addToLog(`Removed ${getCreatureById(removedCreatureId)?.name} from your roster.`)
         }
-        const maxCreatures = prev.selectedGameMode?.playerCreatureCount || 3;
-        const nextSubPhase =
-          currentSelection.length < maxCreatures ? "chooseElement" : null;
+        const maxCreatures = prev.selectedGameMode?.playerCreatureCount || 3
+        const nextSubPhase = currentSelection.length < maxCreatures ? "chooseElement" : null
 
         return {
           ...prev,
           playerSelectedCreatureIds: currentSelection,
           selectionSubPhase: nextSubPhase,
           currentElementSelection: null,
-        };
-      });
+        }
+      })
     },
-    [addToLog]
-  );
+    [addToLog],
+  )
 
   const handlePlayerReplacementSelection = useCallback(
     (creature: Creature) => {
-      if (gameState.selectedGameMode?.id !== "set-3") return; // Replacement only allowed in Set 3
+      if (gameState.selectedGameMode?.id !== "set-3") return // Replacement only allowed in Set 3
       setGameState((prev) => {
-        if (prev.replacementPhaseForPlayer !== "player") return prev;
+        if (prev.replacementPhaseForPlayer !== "player") return prev
 
-        const newStateAfterReplacement = handleCreatureReplacementLogic(
-          prev,
-          "player",
-          creature
-        );
-        addToLog(`Player replaced with ${creature.name}.`);
+        const newStateAfterReplacement = handleCreatureReplacementLogic(prev, "player", creature)
+        addToLog(`Player replaced with ${creature.name}.`)
 
         // After replacement, mark as rolled for this turn and exit replacement phase.
         // The turn will then end immediately.
@@ -1752,61 +1530,52 @@ export default function CardGameArena() {
           ...newStateAfterReplacement,
           hasRolledThisTurn: false, // Allow player to roll after replacement
           replacementPhaseForPlayer: null, // Exit replacement phase
-        };
-      });
+        }
+      })
       // End the turn after a short delay to allow state update to process
       setTimeout(() => {
-        endTurn();
-      }, 100);
+        endTurn()
+      }, 100)
     },
-    [
-      gameState.selectedGameMode?.id,
-      addToLog,
-      handleCreatureReplacementLogic,
-      endTurn,
-    ]
-  );
+    [gameState.selectedGameMode?.id, addToLog, handleCreatureReplacementLogic, endTurn],
+  )
 
   const confirmRosterSelection = useCallback(() => {
     // This function is only for Set 3 (multi-creature selection)
-    if (gameState.selectedGameMode?.id !== "set-3") return;
+    if (gameState.selectedGameMode?.id !== "set-3") return
 
-    const maxCreatures = gameState.selectedGameMode?.playerCreatureCount || 3;
+    const maxCreatures = gameState.selectedGameMode?.playerCreatureCount || 3
     if (gameState.playerSelectedCreatureIds.length !== maxCreatures) {
-      addToLog(`Please select exactly ${maxCreatures} creatures.`);
-      return;
+      addToLog(`Please select exactly ${maxCreatures} creatures.`)
+      return
     }
     if (!gameState.selectedGameMode) {
-      addToLog("Error: Game mode not selected.");
-      return;
+      addToLog("Error: Game mode not selected.")
+      return
     }
 
-    initializeGameRostersAndProceedToCoinToss(
-      gameState.playerSelectedCreatureIds,
-      gameState.selectedGameMode
-    );
+    initializeGameRostersAndProceedToCoinToss(gameState.playerSelectedCreatureIds, gameState.selectedGameMode)
   }, [
     gameState.playerSelectedCreatureIds,
     gameState.selectedGameMode,
     addToLog,
     initializeGameRostersAndProceedToCoinToss,
-  ]);
+  ])
 
-  const playerActiveCreature = gameState.player.activeCreature;
-  const opponentActiveCreature = gameState.opponent.activeCreature;
+  const playerActiveCreature = gameState.player.activeCreature
+  const opponentActiveCreature = gameState.opponent.activeCreature
 
   const canPlayerEvolve =
     playerActiveCreature &&
     gameState.selectedGameMode?.allowEvolution &&
-    playerActiveCreature.turnsSurvived >=
-      (gameState.selectedGameMode?.evolutionTurnsRequired || 3) &&
+    playerActiveCreature.turnsSurvived >= (gameState.selectedGameMode?.evolutionTurnsRequired || 3) &&
     gameState.turn === "player" &&
     !gameState.isRolling &&
     !gameState.isGameOver &&
     !gameState.hasRolledThisTurn &&
     !gameState.replacementPhaseForPlayer &&
     !gameState.isTaggingOut &&
-    playerActiveCreature.stage !== "Level 3";
+    playerActiveCreature.stage !== "Level 3"
 
   const canPlayerTagOut =
     gameState.player.benchCreatures.some((c) => c.currentHp > 0) &&
@@ -1816,32 +1585,31 @@ export default function CardGameArena() {
     !gameState.hasRolledThisTurn &&
     !gameState.replacementPhaseForPlayer &&
     !gameState.isTaggingOut &&
-    gameState.selectedGameMode?.id === "set-3"; // Only allow tag out in Set 3
+    gameState.selectedGameMode?.id === "set-3" // Only allow tag out in Set 3
 
-  const selectedCreatureInstancesForDisplay =
-    gameState.playerSelectedCreatureIds
-      .map((id) => getCreatureById(id))
-      .filter(Boolean) as Creature[];
+  const selectedCreatureInstancesForDisplay = gameState.playerSelectedCreatureIds
+    .map((id) => getCreatureById(id))
+    .filter(Boolean) as Creature[]
 
   const elementCounts: Record<Element, number> = {
     Fire: 0,
     Water: 0,
     Earth: 0,
     Air: 0,
-  };
+  }
   selectedCreatureInstancesForDisplay.forEach((c) => {
-    elementCounts[c.element]++;
-  });
+    elementCounts[c.element]++
+  })
 
-  const elementalTypes: Element[] = ["Fire", "Water", "Earth", "Air"];
+  const elementalTypes: Element[] = ["Fire", "Water", "Earth", "Air"]
 
   useEffect(() => {
     return () => {
-      if (rollTimerRef.current) clearTimeout(rollTimerRef.current);
-      if (damageTimerRef.current) clearTimeout(damageTimerRef.current);
-      if (endTurnTimerRef.current) clearTimeout(endTurnTimerRef.current);
-    };
-  }, [rollTimerRef, damageTimerRef, endTurnTimerRef]); // Add refs to dependency array for cleanup
+      if (rollTimerRef.current) clearTimeout(rollTimerRef.current)
+      if (damageTimerRef.current) clearTimeout(damageTimerRef.current)
+      if (endTurnTimerRef.current) clearTimeout(endTurnTimerRef.current)
+    }
+  }, [rollTimerRef, damageTimerRef, endTurnTimerRef]) // Add refs to dependency array for cleanup
 
   return (
     <>
@@ -1853,9 +1621,9 @@ export default function CardGameArena() {
       <div
         className={cn(
           "min-h-screen p-2 sm:p-4 relative flex items-center justify-center",
-          gameState.replacementPhaseForPlayer &&
-            "opacity-30 pointer-events-none" // Dim and disable interaction
-        )}>
+          gameState.replacementPhaseForPlayer && "opacity-30 pointer-events-none", // Dim and disable interaction
+        )}
+      >
         {gameState.gamePhase === "setup" && (
           <div className="fixed inset-0 flex flex-col items-center justify-center text-white p-4 text-center z-20">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 drop-shadow-lg">
@@ -1869,8 +1637,8 @@ export default function CardGameArena() {
               </div>
             </h1>
             <p className="text-lg sm:text-xl md:text-2xl max-w-2xl mb-8 leading-relaxed">
-              In a world where elemental creatures clash in epic dice-driven
-              battles, only the clever, the bold, and the lucky will rise.
+              In a world where elemental creatures clash in epic dice-driven battles, only the clever, the bold, and the
+              lucky will rise.
             </p>
             <p className="text-xl sm:text-2xl md:text-2xl font-semibold mb-12">
               Choose your team. Roll the dice. Master the elements.
@@ -1880,7 +1648,8 @@ export default function CardGameArena() {
             </p>
             <Button
               onClick={initiateGameSetup}
-              className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105">
+              className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+            >
               Start Game
             </Button>
           </div>
@@ -1892,43 +1661,40 @@ export default function CardGameArena() {
             <button
               onClick={() => setMenuOpen((open) => !open)}
               className="w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
-              aria-label="Open menu">
-              {menuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
+              aria-label="Open menu"
+            >
+              {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
             {menuOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg flex flex-col p-4 gap-4 z-50">
                 <button
                   onClick={() => {
-                    setMenuOpen(false);
+                    setMenuOpen(false)
                     // Open How To Play modal or navigate
                     setGameState((prev) => ({
                       ...prev,
                       isInstructionsOpen: true,
-                    })); // Replace with your How To Play logic
+                    })) // Replace with your How To Play logic
                   }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition">
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition"
+                >
                   How To Play
                 </button>
 
                 {gameState.selectedGameMode && !gameState.isGameOver && (
                   <button
                     onClick={() => {
-                      setMenuOpen(false);
-                      handleBackToMenu(); // Call your back to menu handler
+                      setMenuOpen(false)
+                      handleBackToMenu() // Call your back to menu handler
                     }}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition">
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
+                  >
                     Back to Main Menu
                   </button>
                 )}
 
                 <div className="border-t border-gray-200 pt-2 mt-2">
-                  <span className="text-xs text-gray-500 text-center block">
-                    v1.0.9
-                  </span>
+                  <span className="text-xs text-gray-500 text-center block">v1.0.9</span>
                 </div>
               </div>
             )}
@@ -1939,8 +1705,7 @@ export default function CardGameArena() {
           <div className="flex flex-col items-center gap-4">
             {/* Opponent Bench - Top */}
             {gameState.selectedGameMode?.id === "set-3" && // Only show bench for Set 3
-              (gameState.gamePhase === "inGame" ||
-                gameState.gamePhase === "gameOver") && (
+              (gameState.gamePhase === "inGame" || gameState.gamePhase === "gameOver") && (
                 <div className="flex gap-4">
                   {gameState.opponent.benchCreatures.map((creature, index) => (
                     <div key={`${creature.id}-${index}`} className="relative">
@@ -1950,33 +1715,23 @@ export default function CardGameArena() {
                         creature={creature}
                         isActive={false}
                         isDamaged={
-                          playerActiveCreature
-                            ? gameState.damagedCreatures.has(
-                                playerActiveCreature.instanceId
-                              )
-                            : false
+                          playerActiveCreature ? gameState.damagedCreatures.has(playerActiveCreature.instanceId) : false
                         }
                         gameMode={gameState.selectedGameMode?.id}
                         onSlotClick={() => {
-                          if (
-                            gameState.gamePhase === "inGame" &&
-                            gameState.turn === "player"
-                          ) {
-                            addToLog(
-                              "You cannot interact with opponent's creatures."
-                            );
+                          if (gameState.gamePhase === "inGame" && gameState.turn === "player") {
+                            addToLog("You cannot interact with opponent's creatures.")
                           }
                         }}
                       />
                       {/* Enhanced Damage Animation for Opponent Bench */}
                       {gameState.damageAnimations
-                        .filter(
-                          (anim) => anim.creatureId === creature.instanceId
-                        )
+                        .filter((anim) => anim.creatureId === creature.instanceId)
                         .map((anim) => (
                           <div
                             key={`${anim.creatureId}-${anim.timestamp}`} // <-- fix: unique key
-                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+                          >
                             <div className="text-red-500 font-bold text-2xl sm:text-3xl md:text-4xl animate-damage-float drop-shadow-lg">
                               -{anim.damage}
                             </div>
@@ -1988,8 +1743,7 @@ export default function CardGameArena() {
               )}
 
             {/* Opponent Active - Below bench */}
-            {(gameState.gamePhase === "inGame" ||
-              gameState.gamePhase === "gameOver") && (
+            {(gameState.gamePhase === "inGame" || gameState.gamePhase === "gameOver") && (
               <div className="relative">
                 <ArenaSlot
                   label="Opponent Active"
@@ -2000,39 +1754,25 @@ export default function CardGameArena() {
                   isShaking={gameState.opponentActiveIsShaking}
                   isDefending={gameState.opponentActiveIsDefending}
                   isDamaged={
-                    opponentActiveCreature
-                      ? gameState.damagedCreatures.has(
-                          opponentActiveCreature.instanceId
-                        )
-                      : false
+                    opponentActiveCreature ? gameState.damagedCreatures.has(opponentActiveCreature.instanceId) : false
                   }
-                  isCorrupted={
-                    gameState.isCorrupted &&
-                    gameState.corruptedPlayer === "opponent"
-                  }
+                  isCorrupted={gameState.isCorrupted && gameState.corruptedPlayer === "opponent"}
                   gameMode={gameState.selectedGameMode?.id}
                   onSlotClick={() => {
-                    if (
-                      gameState.gamePhase === "inGame" &&
-                      gameState.turn === "player"
-                    ) {
-                      addToLog(
-                        "You cannot interact with opponent's creatures."
-                      );
+                    if (gameState.gamePhase === "inGame" && gameState.turn === "player") {
+                      addToLog("You cannot interact with opponent's creatures.")
                     }
                   }}
                 />
                 {/* Enhanced Damage Animation for Opponent Active */}
                 {opponentActiveCreature &&
                   gameState.damageAnimations
-                    .filter(
-                      (anim) =>
-                        anim.creatureId === opponentActiveCreature.instanceId
-                    )
+                    .filter((anim) => anim.creatureId === opponentActiveCreature.instanceId)
                     .map((anim) => (
                       <div
                         key={anim.timestamp}
-                        className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+                        className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+                      >
                         <div className="text-red-500 font-bold text-3xl sm:text-4xl md:text-5xl animate-damage-float drop-shadow-lg">
                           -{anim.damage}
                         </div>
@@ -2046,35 +1786,26 @@ export default function CardGameArena() {
               <div className="flex flex-col items-center gap-4 mx-0 my-0 sm:py-6">
                 {gameState.gamePhase === "modeSelection" && (
                   <div className="flex flex-col items-center gap-4 w-full">
-                    {gameState.selectionSubPhase === "chooseChallengeType" &&
-                    gameState.selectedGameMode ? (
+                    {gameState.selectionSubPhase === "chooseChallengeType" && gameState.selectedGameMode ? (
                       <div className="flex flex-col items-center gap-4 w-full max-w-xs text-center">
-                        <h4 className="text-white text-2xl font-bold mb-2">
-                          {gameState.selectedGameMode.name}
-                        </h4>
+                        <h4 className="text-white text-2xl font-bold mb-2">{gameState.selectedGameMode.name}</h4>
                         <Button
                           onClick={() => handleChallengeSelection(true)}
                           variant="outline"
-                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group">
-                          <span className="text-xl font-bold mb-1 group-hover:text-white">
-                            Endless Challenge
-                          </span>
+                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
+                        >
+                          <span className="text-xl font-bold mb-1 group-hover:text-white">Endless Challenge</span>
                           <span className="text-sm text-black text-center group-hover:text-white flex items-center gap-2">
                             <Trophy className="h-4 w-4 text-yellow-500" />
-                            Record:{" "}
-                            {gameState.endlessTrophies[
-                              gameState.selectedGameMode.id
-                            ] || 0}{" "}
-                            wins
+                            Record: {gameState.endlessTrophies[gameState.selectedGameMode.id] || 0} wins
                           </span>
                         </Button>
                         <Button
                           onClick={() => handleChallengeSelection(false)}
                           variant="outline"
-                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group">
-                          <span className="text-xl font-bold mb-1 group-hover:text-white">
-                            Standard Match
-                          </span>
+                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
+                        >
+                          <span className="text-xl font-bold mb-1 group-hover:text-white">Standard Match</span>
                           <span className="text-sm text-black text-center group-hover:text-white">
                             A single battle for glory.
                           </span>
@@ -2088,25 +1819,23 @@ export default function CardGameArena() {
                             }))
                           }
                           variant="ghost"
-                          className="text-white/70 hover:text-foreground mt-2">
+                          className="text-white/70 hover:text-foreground mt-2"
+                        >
                           <ChevronLeft /> Back to Mode Selection
                         </Button>
                       </div>
                     ) : (
                       <>
-                        <h4 className="text-white text-lg font-semibold text-center">
-                          Select a Game Mode:
-                        </h4>
+                        <h4 className="text-white text-lg font-semibold text-center">Select a Game Mode:</h4>
                         <div className="grid grid-cols-1 gap-4 w-full max-w-xs">
                           {gameModes.map((mode) => (
                             <Button
                               key={mode.id}
                               onClick={() => handleModeSelection(mode)}
                               variant="outline"
-                              className="flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group">
-                              <span className="text-xl font-bold mb-1 group-hover:text-white">
-                                {mode.name}
-                              </span>
+                              className="flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
+                            >
+                              <span className="text-xl font-bold mb-1 group-hover:text-white">{mode.name}</span>
                               <span className="text-sm text-black text-center group-hover:text-white">
                                 {mode.description}
                               </span>
@@ -2116,7 +1845,8 @@ export default function CardGameArena() {
                         <Button
                           onClick={openAchievements}
                           variant="ghost"
-                          className="text-white/70 hover:text-foreground mt-4 flex items-center gap-2">
+                          className="text-white/70 hover:text-foreground mt-4 flex items-center gap-2"
+                        >
                           <Trophy className="h-5 w-5 text-yellow-400" />
                           View Achievements
                         </Button>
@@ -2134,8 +1864,7 @@ export default function CardGameArena() {
                         <EarthIcon className="h-8 w-8 text-green-500" />
                         <Wind className="h-8 w-8 text-blue-300" />
                       </div>
-                      Awaken Your First Elementara (
-                      {gameState.playerSelectedCreatureIds.length}/
+                      Awaken Your First Elementara ({gameState.playerSelectedCreatureIds.length}/
                       {gameState.selectedGameMode?.playerCreatureCount || 3})
                     </h4>
                     <p className="text-white/80 text-sm text-center">
@@ -2147,50 +1876,35 @@ export default function CardGameArena() {
                     {/* Your Roster Preview (only for Set 3 mode) */}
                     {gameState.selectedGameMode?.id === "set-3" && (
                       <div className="w-full bg-white/10 p-4 rounded-lg border border-white/20">
-                        <h5 className="text-white text-md font-semibold mb-2">
-                          Your Roster:
-                        </h5>
+                        <h5 className="text-white text-md font-semibold mb-2">Your Roster:</h5>
                         {selectedCreatureInstancesForDisplay.length > 0 ? (
                           <div className="flex flex-wrap justify-center gap-4">
-                            {selectedCreatureInstancesForDisplay.map(
-                              (creature, index) => (
-                                <div key={index} className="relative">
-                                  <CreatureCard
-                                    creature={creature}
-                                    onClick={() =>
-                                      handleCardDetailView(creature)
-                                    } // Allow opening details from roster
-                                    gameMode={gameState.selectedGameMode?.id}
-                                    className={cn(
-                                      "w-12 h-16 xs:w-14 xs:h-18 sm:w-16 sm:h-20 md:w-20 md:h-24",
-                                      index === 0 &&
-                                        "ring-1 sm:ring-2 ring-yellow-400 border-yellow-400",
-                                      index !== 0 &&
-                                        "ring-1 ring-blue-400 border-blue-400"
-                                    )}
-                                  />
-                                  <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:h-6 rounded-full text-white bg-red-600 hover:bg-red-700 text-xs flex items-center justify-center"
-                                    onClick={() =>
-                                      handleRemoveSelectedCreature(index)
-                                    }>
-                                    <span className="text-white text-xs sm:text-sm leading-none">
-                                      ✕
-                                    </span>
-                                    <span className="sr-only">
-                                      Remove {creature.name}
-                                    </span>
-                                  </Button>
-                                </div>
-                              )
-                            )}
+                            {selectedCreatureInstancesForDisplay.map((creature, index) => (
+                              <div key={index} className="relative">
+                                <CreatureCard
+                                  creature={creature}
+                                  onClick={() => handleCardDetailView(creature)} // Allow opening details from roster
+                                  gameMode={gameState.selectedGameMode?.id}
+                                  className={cn(
+                                    "w-12 h-16 xs:w-14 xs:h-18 sm:w-16 sm:h-20 md:w-20 md:h-24",
+                                    index === 0 && "ring-1 sm:ring-2 ring-yellow-400 border-yellow-400",
+                                    index !== 0 && "ring-1 ring-blue-400 border-blue-400",
+                                  )}
+                                />
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:h-6 rounded-full text-white bg-red-600 hover:bg-red-700 text-xs flex items-center justify-center"
+                                  onClick={() => handleRemoveSelectedCreature(index)}
+                                >
+                                  <span className="text-white text-xs sm:text-sm leading-none">✕</span>
+                                  <span className="sr-only">Remove {creature.name}</span>
+                                </Button>
+                              </div>
+                            ))}
                           </div>
                         ) : (
-                          <p className="text-white/60 text-sm text-center">
-                            No creatures selected yet.
-                          </p>
+                          <p className="text-white/60 text-sm text-center">No creatures selected yet.</p>
                         )}
                       </div>
                     )}
@@ -2199,12 +1913,10 @@ export default function CardGameArena() {
                     {/* Show element selection if in chooseElement phase */}
                     {gameState.selectionSubPhase === "chooseElement" && (
                       <div className="flex flex-col items-center gap-4 mt-4">
-                        <h5 className="text-white text-md font-semibold">
-                          Select an Element:
-                        </h5>
+                        <h5 className="text-white text-md font-semibold">Select an Element:</h5>
                         <div className="grid grid-cols-4 gap-4">
                           {elementalTypes.map((element) => {
-                            const ElementEmoji = elementEmojis[element];
+                            const ElementEmoji = elementEmojis[element]
                             return (
                               <Button
                                 key={element}
@@ -2212,14 +1924,13 @@ export default function CardGameArena() {
                                 variant="outline"
                                 className={cn(
                                   "flex flex-col items-center justify-center p-4 h-auto",
-                                  "text-black border-white/30 hover:bg-white/30 group" // Added 'group' class
-                                )}>
+                                  "text-black border-white/30 hover:bg-white/30 group", // Added 'group' class
+                                )}
+                              >
                                 {ElementEmoji}
-                                <span className="text-sm font-bold text-black group-hover:text-white">
-                                  {element}
-                                </span>
+                                <span className="text-sm font-bold text-black group-hover:text-white">{element}</span>
                               </Button>
-                            );
+                            )
                           })}
                         </div>
                       </div>
@@ -2227,13 +1938,11 @@ export default function CardGameArena() {
 
                     {/* Only show specific creature selection if Set 2 and in chooseSpecificCreatureForSet2 phase */}
                     {gameState.selectedGameMode?.id === "set-2" &&
-                      gameState.selectionSubPhase ===
-                        "chooseSpecificCreatureForSet2" &&
+                      gameState.selectionSubPhase === "chooseSpecificCreatureForSet2" &&
                       gameState.creaturesToChooseFrom && (
                         <div className="flex flex-col items-center gap-4 mt-4">
                           <h5 className="text-white text-md font-semibold">
-                            Choose your Level 3{" "}
-                            {gameState.currentElementSelection} Creature:
+                            Choose your Level 3 {gameState.currentElementSelection} Creature:
                           </h5>
                           <div className="grid grid-cols-3 gap-4">
                             {gameState.creaturesToChooseFrom.map((creature) => (
@@ -2241,14 +1950,10 @@ export default function CardGameArena() {
                                 key={creature.id}
                                 creature={creature}
                                 onClick={() => {
-                                  if (
-                                    gameState.gamePhase === "creatureSelection"
-                                  ) {
-                                    handleFinalSet2CreatureSelection(
-                                      creature.id
-                                    );
+                                  if (gameState.gamePhase === "creatureSelection") {
+                                    handleFinalSet2CreatureSelection(creature.id)
                                   } else {
-                                    handleCardDetailView(creature);
+                                    handleCardDetailView(creature)
                                   }
                                 }}
                                 gameMode={gameState.selectedGameMode?.id}
@@ -2266,69 +1971,63 @@ export default function CardGameArena() {
                               }))
                             }
                             variant="outline"
-                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-foreground">
+                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-foreground"
+                          >
                             <ChevronLeft /> Back to Element Selection
                           </Button>
                         </div>
                       )}
 
                     {/* Only show creature selection if Set 3 and in chooseCreature phase */}
-                    {gameState.selectedGameMode?.id === "set-3" &&
-                      gameState.selectionSubPhase === "chooseCreature" && (
-                        <div className="flex flex-col items-center gap-4 mt-4">
-                          <h5 className="text-white text-md font-semibold">
-                            Choose a {gameState.currentElementSelection}{" "}
-                            Creature:
-                          </h5>
-                          <div className="grid grid-cols-3 gap-4">
-                            {gameState.currentElementSelection
-                              ? getAllBasicCreatures()
-                                  .filter((creature) => {
-                                    const isAlreadySelectedById =
-                                      gameState.playerSelectedCreatureIds.includes(
-                                        creature.id
-                                      );
-                                    return (
-                                      creature.element ===
-                                        gameState.currentElementSelection &&
-                                      !isAlreadySelectedById
-                                    );
-                                  })
-                                  .map((creature) => (
-                                    <CreatureCard
-                                      key={creature.id}
-                                      creature={creature}
-                                      onClick={() => {
-                                        if (
-                                          gameState.gamePhase ===
-                                          "creatureSelection"
-                                        ) {
-                                          handleCreatureSelection(creature.id);
-                                        } else {
-                                          handleCardDetailView(creature);
-                                        }
-                                      }}
-                                      gameMode={gameState.selectedGameMode?.id}
-                                      className="cursor-pointer"
-                                    />
-                                  ))
-                              : null}
-                          </div>
-                          <Button
-                            onClick={() =>
-                              setGameState((prev) => ({
-                                ...prev,
-                                selectionSubPhase: "chooseElement",
-                                currentElementSelection: null,
-                              }))
-                            }
-                            variant="outline"
-                            className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-white">
-                            <ChevronLeft />
-                            Back to Element Selection
-                          </Button>
+                    {gameState.selectedGameMode?.id === "set-3" && gameState.selectionSubPhase === "chooseCreature" && (
+                      <div className="flex flex-col items-center gap-4 mt-4">
+                        <h5 className="text-white text-md font-semibold">
+                          Choose a {gameState.currentElementSelection} Creature:
+                        </h5>
+                        <div className="grid grid-cols-3 gap-4">
+                          {gameState.currentElementSelection
+                            ? getAllBasicCreatures()
+                                .filter((creature) => {
+                                  const isAlreadySelectedById = gameState.playerSelectedCreatureIds.includes(
+                                    creature.id,
+                                  )
+                                  return (
+                                    creature.element === gameState.currentElementSelection && !isAlreadySelectedById
+                                  )
+                                })
+                                .map((creature) => (
+                                  <CreatureCard
+                                    key={creature.id}
+                                    creature={creature}
+                                    onClick={() => {
+                                      if (gameState.gamePhase === "creatureSelection") {
+                                        handleCreatureSelection(creature.id)
+                                      } else {
+                                        handleCardDetailView(creature)
+                                      }
+                                    }}
+                                    gameMode={gameState.selectedGameMode?.id}
+                                    className="cursor-pointer"
+                                  />
+                                ))
+                            : null}
                         </div>
-                      )}
+                        <Button
+                          onClick={() =>
+                            setGameState((prev) => ({
+                              ...prev,
+                              selectionSubPhase: "chooseElement",
+                              currentElementSelection: null,
+                            }))
+                          }
+                          variant="outline"
+                          className="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 hover:text-white"
+                        >
+                          <ChevronLeft />
+                          Back to Element Selection
+                        </Button>
+                      </div>
+                    )}
 
                     {/* Only show Confirm Roster button if Set 3 */}
                     {gameState.selectedGameMode?.id === "set-3" && (
@@ -2338,7 +2037,8 @@ export default function CardGameArena() {
                           gameState.playerSelectedCreatureIds.length !==
                           (gameState.selectedGameMode?.playerCreatureCount || 3)
                         }
-                        className="bg-green-600 hover:bg-green-700 text-white">
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
                         Confirm Roster
                       </Button>
                     )}
@@ -2348,9 +2048,7 @@ export default function CardGameArena() {
                 {gameState.gamePhase === "instructions" && (
                   <div className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto">
                     <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-4">
-                      {gameState.selectedGameMode?.id === "set-2"
-                        ? "Full Power Duel"
-                        : "Evolution Clash"}
+                      {gameState.selectedGameMode?.id === "set-2" ? "Full Power Duel" : "Evolution Clash"}
                     </h2>
 
                     <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6 sm:p-8 space-y-4">
@@ -2358,8 +2056,7 @@ export default function CardGameArena() {
                         {gameState.selectedGameMode?.id === "set-2" ? (
                           <>
                             <p className="text-md font-semibold mb-4">
-                              Choose one Stage 3 Elementara. Battle at peak
-                              power.
+                              Choose one Stage 3 Elementara. Battle at peak power.
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
@@ -2367,8 +2064,7 @@ export default function CardGameArena() {
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
-                              <ChartColumnBig /> Use full HP stats, resistances,
-                              and weaknesses.
+                              <ChartColumnBig /> Use full HP stats, resistances, and weaknesses.
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
@@ -2376,20 +2072,17 @@ export default function CardGameArena() {
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
-                              <TrophyIcon /> First to reduce the opponent's HP
-                              to 0 wins.
+                              <TrophyIcon /> First to reduce the opponent's HP to 0 wins.
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
-                              <Zap /> Experience the full power of evolved
-                              Elementara!
+                              <Zap /> Experience the full power of evolved Elementara!
                             </p>
                           </>
                         ) : (
                           <>
                             <p className="text-md font-semibold mb-4">
-                              Choose a full evolution line. Battle through all 3
-                              stages.
+                              Choose a full evolution line. Battle through all 3 stages.
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
@@ -2405,8 +2098,7 @@ export default function CardGameArena() {
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
-                              <ChartColumnBig /> Use HP, resistances, and
-                              weaknesses.
+                              <ChartColumnBig /> Use HP, resistances, and weaknesses.
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
@@ -2414,8 +2106,7 @@ export default function CardGameArena() {
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
-                              <BrainCircuit /> Master the art of evolution and
-                              strategy!
+                              <BrainCircuit /> Master the art of evolution and strategy!
                             </p>
                           </>
                         )}
@@ -2424,10 +2115,9 @@ export default function CardGameArena() {
 
                     <Button
                       onClick={proceedFromInstructions}
-                      className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105 mt-4">
-                      {gameState.selectedGameMode?.id === "set-2"
-                        ? "Begin Full Power Battle"
-                        : "Begin Evolution Clash"}
+                      className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105 mt-4"
+                    >
+                      {gameState.selectedGameMode?.id === "set-2" ? "Begin Full Power Battle" : "Begin Evolution Clash"}
                     </Button>
                   </div>
                 )}
@@ -2438,57 +2128,53 @@ export default function CardGameArena() {
                       <div
                         className={cn(
                           "text-8xl sm:text-9xl drop-shadow-2xl",
-                          !gameState.coinFlipResult && "animate-coin-flip"
-                        )}>
+                          !gameState.coinFlipResult && "animate-coin-flip",
+                        )}
+                      >
                         🪙
                       </div>
                       <div
                         className={cn(
                           "absolute inset-0 text-8xl sm:text-9xl opacity-30",
-                          !gameState.coinFlipResult && "animate-coin-bounce"
-                        )}>
+                          !gameState.coinFlipResult && "animate-coin-bounce",
+                        )}
+                      >
                         ✨
                       </div>
                     </div>
                     {!gameState.coinFlipResult ? (
-                      <div className="text-lg sm:text-xl font-bold text-yellow-400 animate-pulse">
-                        Flipping Coin...
-                      </div>
+                      <div className="text-lg sm:text-xl font-bold text-yellow-400 animate-pulse">Flipping Coin...</div>
                     ) : (
                       <div className="flex flex-col items-center gap-2">
                         <div className="text-4xl sm:text-5xl font-extrabold text-yellow-400 animate-bounce drop-shadow-lg">
                           {gameState.coinFlipResult}!
                         </div>
                         <div className="text-xl sm:text-2xl font-bold text-yellow-400">
-                          {gameState.coinFlipResult === "Heads"
-                            ? "You start first!"
-                            : "Opponent starts first!"}
+                          {gameState.coinFlipResult === "Heads" ? "You start first!" : "Opponent starts first!"}
                         </div>
                       </div>
                     )}
                   </div>
                 )}
 
-                {gameState.gamePhase === "inGame" &&
-                  !gameState.replacementPhaseForPlayer && (
-                    <div className="flex flex-col items-center gap-4">
-                      <DiceComponent
-                        value={gameState.diceValue}
-                        isRolling={gameState.isRolling}
-                        isCorrupted={gameState.isCorrupted}
-                        gameMode={gameState.selectedGameMode?.id}
-                        isCriticalMiss={gameState.isCriticalMiss}
-                        isCriticalHit={gameState.isCriticalHit}
-                      />
-                      {/* ...corruption indicator... */}
-                    </div>
-                  )}
+                {gameState.gamePhase === "inGame" && !gameState.replacementPhaseForPlayer && (
+                  <div className="flex flex-col items-center gap-4">
+                    <DiceComponent
+                      value={gameState.diceValue}
+                      isRolling={gameState.isRolling}
+                      isCorrupted={gameState.isCorrupted}
+                      gameMode={gameState.selectedGameMode?.id}
+                      isCriticalMiss={gameState.isCriticalMiss}
+                      isCriticalHit={gameState.isCriticalHit}
+                    />
+                    {/* ...corruption indicator... */}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Player Active (closer to center) */}
-            {(gameState.gamePhase === "inGame" ||
-              gameState.gamePhase === "gameOver") && (
+            {(gameState.gamePhase === "inGame" || gameState.gamePhase === "gameOver") && (
               <div className="relative">
                 <ArenaSlot
                   label="Your Active"
@@ -2498,39 +2184,25 @@ export default function CardGameArena() {
                   isShaking={gameState.playerActiveIsShaking}
                   isDefending={gameState.playerActiveIsDefending}
                   isDamaged={
-                    playerActiveCreature
-                      ? gameState.damagedCreatures.has(
-                          playerActiveCreature.instanceId
-                        )
-                      : false
+                    playerActiveCreature ? gameState.damagedCreatures.has(playerActiveCreature.instanceId) : false
                   }
-                  isCorrupted={
-                    gameState.isCorrupted &&
-                    gameState.corruptedPlayer === "player"
-                  }
+                  isCorrupted={gameState.isCorrupted && gameState.corruptedPlayer === "player"}
                   gameMode={gameState.selectedGameMode?.id}
                   onSlotClick={() => {
-                    if (
-                      gameState.gamePhase === "inGame" &&
-                      gameState.turn === "player"
-                    ) {
-                      addToLog(
-                        "You cannot interact with your active creature directly."
-                      );
+                    if (gameState.gamePhase === "inGame" && gameState.turn === "player") {
+                      addToLog("You cannot interact with your active creature directly.")
                     }
                   }}
                 />
                 {/* Enhanced Damage Animation for Player Active */}
                 {playerActiveCreature &&
                   gameState.damageAnimations
-                    .filter(
-                      (anim) =>
-                        anim.creatureId === playerActiveCreature.instanceId
-                    )
+                    .filter((anim) => anim.creatureId === playerActiveCreature.instanceId)
                     .map((anim) => (
                       <div
                         key={anim.timestamp}
-                        className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+                        className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+                      >
                         <div className="text-red-500 font-bold text-3xl sm:text-4xl md:text-5xl animate-damage-float drop-shadow-lg">
                           -{anim.damage}
                         </div>
@@ -2540,23 +2212,16 @@ export default function CardGameArena() {
             )}
             {/* Player Bench (further away from center) */}
             {gameState.selectedGameMode?.id === "set-3" && // Only show bench for Set 3
-              (gameState.gamePhase === "inGame" ||
-                gameState.gamePhase === "gameOver") && (
+              (gameState.gamePhase === "inGame" || gameState.gamePhase === "gameOver") && (
                 <div className="flex gap-4">
                   {gameState.player.benchCreatures.map((creature, index) => (
                     <div key={`${creature.id}-${index}`} className="relative">
                       <ArenaSlot
                         label={`Your Bench ${index + 1}`}
                         creature={creature}
-                        isActive={
-                          gameState.turn === "player" && gameState.isTaggingOut
-                        }
+                        isActive={gameState.turn === "player" && gameState.isTaggingOut}
                         isDamaged={
-                          playerActiveCreature
-                            ? gameState.damagedCreatures.has(
-                                playerActiveCreature.instanceId
-                              )
-                            : false
+                          playerActiveCreature ? gameState.damagedCreatures.has(playerActiveCreature.instanceId) : false
                         }
                         gameMode={gameState.selectedGameMode?.id}
                         onSlotClick={() => {
@@ -2566,35 +2231,28 @@ export default function CardGameArena() {
                             creature.currentHp > 0 &&
                             gameState.isTaggingOut
                           ) {
-                            handleTagOut("player", creature);
+                            handleTagOut("player", creature)
                           } else if (creature.currentHp <= 0) {
-                            addToLog(
-                              "This creature is knocked out and cannot be tagged in."
-                            );
+                            addToLog("This creature is knocked out and cannot be tagged in.")
                           } else if (gameState.gamePhase !== "inGame") {
-                            addToLog("The game hasn't started yet.");
+                            addToLog("The game hasn't started yet.")
                           } else if (gameState.turn !== "player") {
-                            addToLog("It's not your turn.");
+                            addToLog("It's not your turn.")
                           } else if (gameState.isTaggingOut) {
-                            addToLog(
-                              "Click a benched creature to tag out with it."
-                            );
+                            addToLog("Click a benched creature to tag out with it.")
                           } else if (gameState.replacementPhaseForPlayer) {
-                            addToLog(
-                              "You must select a replacement for your knocked out creature."
-                            );
+                            addToLog("You must select a replacement for your knocked out creature.")
                           }
                         }}
                       />
                       {/* Enhanced Damage Animation for Player Bench */}
                       {gameState.damageAnimations
-                        .filter(
-                          (anim) => anim.creatureId === creature.instanceId
-                        )
+                        .filter((anim) => anim.creatureId === creature.instanceId)
                         .map((anim) => (
                           <div
                             key={anim.timestamp}
-                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+                          >
                             <div className="text-red-500 font-bold text-2xl sm:text-3xl md:text-4xl animate-damage-float drop-shadow-lg">
                               -{anim.damage}
                             </div>
@@ -2612,27 +2270,26 @@ export default function CardGameArena() {
           <div
             className={cn(
               "fixed inset-0 flex flex-col items-center justify-center z-[100] transition-all duration-500",
-              gameState.winner === "opponent" ? "bg-black/70" : "bg-blue-900/70"
-            )}>
+              gameState.winner === "opponent" ? "bg-black/70" : "bg-blue-900/70",
+            )}
+          >
             <h2
               className={cn(
                 "text-6xl sm:text-8xl font-extrabold text-white text-center drop-shadow-lg",
-                gameState.winner === "player"
-                  ? "text-green-600"
-                  : "text-red-600"
-              )}>
+                gameState.winner === "player" ? "text-green-600" : "text-red-600",
+              )}
+            >
               {gameState.winner === "player" ? "You Win!" : "You Lose!"}
             </h2>
-            {gameState.isEndlessModeActive &&
-              gameState.winner === "opponent" && (
-                <p className="text-2xl sm:text-3xl text-white mt-4">
-                  Final Score:{" "}
-                  <span className="font-bold text-yellow-400">
-                    {gameState.finalEndlessScore ?? gameState.endlessWins}
-                  </span>{" "}
-                  wins
-                </p>
-              )}
+            {gameState.isEndlessModeActive && gameState.winner === "opponent" && (
+              <p className="text-2xl sm:text-3xl text-white mt-4">
+                Final Score:{" "}
+                <span className="font-bold text-yellow-400">
+                  {gameState.finalEndlessScore ?? gameState.endlessWins}
+                </span>{" "}
+                wins
+              </p>
+            )}
             <div className="flex gap-4 mt-8">
               <Button
                 onClick={handleRestartCurrentMode}
@@ -2642,8 +2299,9 @@ export default function CardGameArena() {
                   "text-white font-semibold shadow-2xl border-2 border-green-500/50",
                   "transition-all duration-200 hover:scale-105 hover:shadow-green-500/25",
                   "text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3",
-                  "z-[101]"
-                )}>
+                  "z-[101]",
+                )}
+              >
                 Restart
               </Button>
               <Button
@@ -2654,8 +2312,9 @@ export default function CardGameArena() {
                   "text-white font-semibold shadow-2xl border-2 border-green-500/50",
                   "transition-all duration-200 hover:scale-105 hover:shadow-green-500/25",
                   "text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3",
-                  "z-[101]"
-                )}>
+                  "z-[101]",
+                )}
+              >
                 Back to Menu
               </Button>
             </div>
@@ -2670,7 +2329,8 @@ export default function CardGameArena() {
               <Button
                 onClick={closeCardDetails}
                 size="icon"
-                className="absolute top-4 right-4 z-[201] w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg transition-all duration-200 hover:scale-105">
+                className="absolute top-4 right-4 z-[201] w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg transition-all duration-200 hover:scale-105"
+              >
                 <span className="text-xl text-black">✕</span>
                 <span className="sr-only">Close Card Details</span>
               </Button>
@@ -2685,11 +2345,7 @@ export default function CardGameArena() {
                     </h2>
                     <div className="flex justify-center items-center gap-2">
                       <span className="text-4xl sm:text-5xl md:text-6xl">
-                        {
-                          elementEmojis[
-                            gameState.selectedCardForDetails.element
-                          ]
-                        }
+                        {elementEmojis[gameState.selectedCardForDetails.element]}
                       </span>
                       <span className="text-lg sm:text-xl md:text-2xl font-semibold">
                         {gameState.selectedCardForDetails.element}
@@ -2708,21 +2364,15 @@ export default function CardGameArena() {
 
                     {/* HP Stats */}
                     <div className="bg-red-50 rounded-lg p-3 sm:p-4 border-2 border-red-200">
-                      <h3 className="text-lg sm:text-xl font-bold text-red-700 mb-2 text-center">
-                        Health Points
-                      </h3>
+                      <h3 className="text-lg sm:text-xl font-bold text-red-700 mb-2 text-center">Health Points</h3>
                       <div className="flex justify-between items-center">
-                        <span className="text-base sm:text-lg font-medium text-gray-700">
-                          Current HP:
-                        </span>
+                        <span className="text-base sm:text-lg font-medium text-gray-700">Current HP:</span>
                         <span className="text-xl sm:text-2xl font-bold text-red-600">
                           {gameState.selectedCardForDetails.currentHp}
                         </span>
                       </div>
                       <div className="flex justify-between items-center mt-1">
-                        <span className="text-base sm:text-lg font-medium text-gray-700">
-                          Max HP:
-                        </span>
+                        <span className="text-base sm:text-lg font-medium text-gray-700">Max HP:</span>
                         <span className="text-xl sm:text-2xl font-bold text-red-800">
                           {gameState.selectedCardForDetails.maxHp}
                         </span>
@@ -2733,18 +2383,17 @@ export default function CardGameArena() {
                             className="bg-red-500 h-3 sm:h-4 rounded-full transition-all duration-500"
                             style={{
                               width: `${
-                                (gameState.selectedCardForDetails.currentHp /
-                                  gameState.selectedCardForDetails.maxHp) *
+                                (gameState.selectedCardForDetails.currentHp / gameState.selectedCardForDetails.maxHp) *
                                 100
                               }%`,
-                            }}></div>
+                            }}
+                          ></div>
                         </div>
                       </div>
                     </div>
 
                     {/* Weaknesses and Resistances */}
-                    {(gameState.selectedCardForDetails.weakness ||
-                      gameState.selectedCardForDetails.resistance) && (
+                    {(gameState.selectedCardForDetails.weakness || gameState.selectedCardForDetails.resistance) && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         {gameState.selectedCardForDetails.weakness && (
                           <div className="bg-orange-50 rounded-lg p-3 border-2 border-orange-200">
@@ -2753,11 +2402,7 @@ export default function CardGameArena() {
                             </h4>
                             <div className="flex justify-center items-center gap-1">
                               <span className="text-2xl sm:text-3xl">
-                                {
-                                  elementEmojis[
-                                    gameState.selectedCardForDetails.weakness
-                                  ]
-                                }
+                                {elementEmojis[gameState.selectedCardForDetails.weakness]}
                               </span>
                               <span className="text-sm sm:text-base font-medium text-orange-600">
                                 {gameState.selectedCardForDetails.weakness}
@@ -2772,11 +2417,7 @@ export default function CardGameArena() {
                             </h4>
                             <div className="flex justify-center items-center gap-1">
                               <span className="text-2xl sm:text-3xl">
-                                {
-                                  elementEmojis[
-                                    gameState.selectedCardForDetails.resistance
-                                  ]
-                                }
+                                {elementEmojis[gameState.selectedCardForDetails.resistance]}
                               </span>
                               <span className="text-sm sm:text-base font-medium text-green-600">
                                 {gameState.selectedCardForDetails.resistance}
@@ -2813,13 +2454,9 @@ export default function CardGameArena() {
 
                     {/* Battle Stats */}
                     <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border-2 border-gray-200">
-                      <h4 className="text-base sm:text-lg font-bold text-gray-700 mb-2 text-center">
-                        Battle Stats
-                      </h4>
+                      <h4 className="text-base sm:text-lg font-bold text-gray-700 mb-2 text-center">Battle Stats</h4>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm sm:text-base font-medium text-gray-600">
-                          Turns Survived:
-                        </span>
+                        <span className="text-sm sm:text-base font-medium text-gray-600">Turns Survived:</span>
                         <span className="text-lg sm:text-xl font-bold text-gray-800">
                           {gameState.selectedCardForDetails.turnsSurvived || 0}
                         </span>
@@ -2836,23 +2473,24 @@ export default function CardGameArena() {
         {gameState.isAchievementsOpen && (
           <div
             className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in-0"
-            onClick={closeAchievements}>
+            onClick={closeAchievements}
+          >
             <div
               className="relative w-full max-w-md bg-gray-900/70 border border-white/20 rounded-xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95"
-              onClick={(e) => e.stopPropagation()}>
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 onClick={closeAchievements}
                 className="absolute -top-3 -right-3 z-10 w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg border-2 border-white/50"
-                title="Close">
+                title="Close"
+              >
                 <span className="text-xl font-bold">✕</span>
               </button>
               <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-6 flex items-center justify-center gap-3">
                 <Trophy className="h-8 w-8 text-yellow-400" />
                 Achievements
               </h2>
-              <p className="text-center text-white/80 mb-8">
-                Your best scores in Endless Challenge mode.
-              </p>
+              <p className="text-center text-white/80 mb-8">Your best scores in Endless Challenge mode.</p>
               <div className="mt-4">
                 <table className="w-full text-white">
                   <thead className="sr-only">
@@ -2863,21 +2501,15 @@ export default function CardGameArena() {
                   </thead>
                   <tbody>
                     {gameModes.map((mode) => (
-                      <tr
-                        key={mode.id}
-                        className="border-b border-white/10 last:border-b-0">
-                        <td className="py-3 sm:py-4 text-base sm:text-lg font-semibold">
-                          {mode.name}
-                        </td>
+                      <tr key={mode.id} className="border-b border-white/10 last:border-b-0">
+                        <td className="py-3 sm:py-4 text-base sm:text-lg font-semibold">{mode.name}</td>
                         <td className="py-3 sm:py-4">
                           <div className="flex items-center justify-end gap-2 sm:gap-3">
                             <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />
                             <span className="font-bold text-xl sm:text-2xl w-10 text-center">
                               {gameState.endlessTrophies[mode.id] || 0}
                             </span>
-                            <span className="text-white/70 text-sm sm:text-base">
-                              wins
-                            </span>
+                            <span className="text-white/70 text-sm sm:text-base">wins</span>
                           </div>
                         </td>
                       </tr>
@@ -2892,14 +2524,17 @@ export default function CardGameArena() {
         {gameState.isInstructionsOpen && (
           <div
             className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in-0 text-white/80 h-full"
-            onClick={closeInstructions}>
+            onClick={closeInstructions}
+          >
             <div
               className="relative w-full max-w-xl bg-gray-900/70 border border-white/20 rounded-xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 h-full"
-              onClick={(e) => e.stopPropagation()}>
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 onClick={closeInstructions}
                 className="absolute -top-3 -right-3 z-10 w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg border-2 border-white/50"
-                title="Close">
+                title="Close"
+              >
                 <span className="text-xl font-bold">✕</span>
               </button>
 
@@ -2911,9 +2546,8 @@ export default function CardGameArena() {
 
               <div className="overflow-y-auto h-[90%]">
                 <p className="mb-8">
-                  <strong>Elementara</strong> is a fast-paced, dice-powered
-                  creature battle game. Knock out all enemy creatures by using
-                  smart rolls, elemental matchups, and strategic tagging.
+                  <strong>Elementara</strong> is a fast-paced, dice-powered creature battle game. Knock out all enemy
+                  creatures by using smart rolls, elemental matchups, and strategic tagging.
                 </p>
 
                 <h2 className="font-bold text-xl mb-4 flex gap-2 items-center">
@@ -2923,25 +2557,18 @@ export default function CardGameArena() {
                 <h3 className="font-bold">1. Evolution Mode (3v3 Battle)</h3>
                 <ul className="mb-8 list-disc list-inside pl-4">
                   <li>
-                    Choose <strong>3 creatures</strong> from any element (Fire,
-                    Water, Earth, or Air).
+                    Choose <strong>3 creatures</strong> from any element (Fire, Water, Earth, or Air).
                   </li>
+                  <li>Each creature evolves after every win (up to Stage 3).</li>
                   <li>
-                    Each creature evolves after every win (up to Stage 3).
-                  </li>
-                  <li>
-                    Evolution grants <strong>+10/+20 damage</strong> and{" "}
-                    <strong>-10/-20 damage taken</strong>.
+                    Evolution grants <strong>+10/+20 damage</strong> and <strong>-10/-20 damage taken</strong>.
                   </li>
                 </ul>
 
-                <h3 className="font-bold">
-                  2. Endless Challenge Mode (Solo Survival)
-                </h3>
+                <h3 className="font-bold">2. Endless Challenge Mode (Solo Survival)</h3>
                 <ul className="mb-8 list-disc list-inside pl-4">
                   <li>
-                    Pick <strong>one elemental line</strong> (e.g. Sigael →
-                    Drakalayo → Infernuko).
+                    Pick <strong>one elemental line</strong> (e.g. Sigael → Drakalayo → Infernuko).
                   </li>
                   <li>Battle through as many opponents as possible.</li>
                   <li>
@@ -2969,8 +2596,8 @@ export default function CardGameArena() {
                   <Dices /> Dice Roll
                 </h3>
                 <p className="mb-8">
-                  At the start of your turn, roll a six-sided die (1–6). The
-                  result is your <strong>base attack damage</strong>.
+                  At the start of your turn, roll a six-sided die (1–6). The result is your{" "}
+                  <strong>base attack damage</strong>.
                 </p>
 
                 <h3 className="font-bold mb-4 flex gap-2 items-center">
@@ -2992,17 +2619,16 @@ export default function CardGameArena() {
                 </ul>
 
                 <p className="mb-8">
-                  <strong>Example:</strong> You roll a 6 with a Stage 3 creature
-                  (6+20 = 26). Enemy is Stage 2, so they take{" "}
-                  <strong>16 damage</strong>.
+                  <strong>Example:</strong> You roll a 6 with a Stage 3 creature (6+20 = 26). Enemy is Stage 2, so they
+                  take <strong>16 damage</strong>.
                 </p>
 
                 <h3 className="font-bold mb-4 flex gap-2 items-center">
                   <RefreshCw /> Tagging
                 </h3>
                 <p className="mb-8">
-                  You may tag a benched creature on your turn. This skips your
-                  attack but lets you gain a better elemental matchup.
+                  You may tag a benched creature on your turn. This skips your attack but lets you gain a better
+                  elemental matchup.
                 </p>
 
                 <h2 className="font-bold text-xl mb-4 flex gap-2 items-center">
@@ -3011,32 +2637,26 @@ export default function CardGameArena() {
 
                 <ul className="mb-8 list-disc list-inside pl-4">
                   <li>
-                    Each creature has one <strong>Weakness</strong> (+10 damage
-                    taken)
+                    Each creature has one <strong>Weakness</strong> (+10 damage taken)
                   </li>
                   <li>
-                    Each creature has one <strong>Resistance</strong> (-10
-                    damage taken)
+                    Each creature has one <strong>Resistance</strong> (-10 damage taken)
                   </li>
                 </ul>
 
                 <h4>Element Chart:</h4>
                 <ul className="mb-8 list-disc list-inside pl-4">
                   <li className="flex items-center gap-2 mb-2">
-                    <Flame className="text-red-500" /> beats{" "}
-                    <EarthIcon className="text-green-500" />
+                    <Flame className="text-red-500" /> beats <EarthIcon className="text-green-500" />
                   </li>
                   <li className="flex items-center gap-2 mb-2">
-                    <EarthIcon className="text-green-500" /> beats{" "}
-                    <Wind className="text-blue-300" />
+                    <EarthIcon className="text-green-500" /> beats <Wind className="text-blue-300" />
                   </li>
                   <li className="flex items-center gap-2 mb-2">
-                    <Wind className="text-blue-300" /> beats{" "}
-                    <Droplet className="text-blue-500" />
+                    <Wind className="text-blue-300" /> beats <Droplet className="text-blue-500" />
                   </li>
                   <li className="flex items-center gap-2 mb-2">
-                    <Droplet className="text-blue-500" /> beats{" "}
-                    <Flame className="text-red-500" />
+                    <Droplet className="text-blue-500" /> beats <Flame className="text-red-500" />
                   </li>
                 </ul>
 
@@ -3044,9 +2664,8 @@ export default function CardGameArena() {
                   <Shell /> Corrupted Dice Mechanic
                 </h2>
                 <p className="mb-8">
-                  If the <strong>same die result appears twice in a row</strong>{" "}
-                  (either player), the die becomes <strong>Corrupted</strong>{" "}
-                  for 3 turns.
+                  If the <strong>same die result appears twice in a row</strong> (either player), the die becomes{" "}
+                  <strong>Corrupted</strong> for 3 turns.
                 </p>
 
                 <p className="mb-4">
@@ -3061,39 +2680,33 @@ export default function CardGameArena() {
                 </ul>
 
                 <p className="mb-8">
-                  <strong>
-                    Critical Hit = 50 Damage and skip your next turn.
-                  </strong>
+                  <strong>Critical Hit = 50 Damage and skip your next turn.</strong>
                 </p>
                 <p>
-                  Note: Corruption can only trigger{" "}
-                  <strong>once per game</strong>.
+                  Note: Corruption can only trigger <strong>once per game</strong>.
                 </p>
               </div>
             </div>
           </div>
         )}
       </div>
-      {gameState.gamePhase === "inGame" &&
-        !gameState.replacementPhaseForPlayer && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-black/20 backdrop-blur-sm">
-            <div className="flex gap-3 w-full max-w-2xl mx-auto">
-              {/* Combat Actions */}
+      {gameState.gamePhase === "inGame" && !gameState.replacementPhaseForPlayer && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-black/20 backdrop-blur-sm">
+          <div className="w-full max-w-2xl mx-auto space-y-3">
+            {/* Top row: Attack, Guard, Charge */}
+            <div className="flex gap-3">
               <Button
                 onClick={() => {
                   setGameState((prev) => ({
                     ...prev,
                     playerActionChoice: "attack",
                     hasRolledThisTurn: true,
-                  }));
-                  rollDice(); // Execute attack immediately
+                  }))
+                  rollDice() // Execute attack immediately
                 }}
-                disabled={
-                  gameState.hasRolledThisTurn ||
-                  gameState.isRolling ||
-                  gameState.turn !== "player"
-                }
-                className="flex-1 text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100">
+                disabled={gameState.hasRolledThisTurn || gameState.isRolling || gameState.turn !== "player"}
+                className="flex-1 text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100"
+              >
                 Attack
               </Button>
 
@@ -3104,15 +2717,12 @@ export default function CardGameArena() {
                     playerActionChoice: "guard",
                     playerIsGuarding: true,
                     hasRolledThisTurn: true,
-                  }));
-                  endTurn(); // End turn after choosing guard
+                  }))
+                  endTurn() // End turn after choosing guard
                 }}
-                disabled={
-                  gameState.hasRolledThisTurn ||
-                  gameState.isRolling ||
-                  gameState.turn !== "player"
-                }
-                className="flex-1 text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100">
+                disabled={gameState.hasRolledThisTurn || gameState.isRolling || gameState.turn !== "player"}
+                className="flex-1 text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100"
+              >
                 Guard
               </Button>
 
@@ -3123,49 +2733,39 @@ export default function CardGameArena() {
                     playerActionChoice: "charge",
                     playerIsCharged: true,
                     hasRolledThisTurn: true,
-                  }));
-                  endTurn(); // End turn after choosing charge
+                  }))
+                  endTurn() // End turn after choosing charge
                 }}
-                disabled={
-                  gameState.hasRolledThisTurn ||
-                  gameState.isRolling ||
-                  gameState.turn !== "player"
-                }
-                className="flex-1 text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100">
+                disabled={gameState.hasRolledThisTurn || gameState.isRolling || gameState.turn !== "player"}
+                className="flex-1 text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100"
+              >
                 Charge
               </Button>
+            </div>
 
-              {/* Support Actions */}
-              {gameState.selectedGameMode?.id === "set-3" && (
+            {/* Bottom row: Tag and Evolve (Set 3 only) */}
+            {gameState.selectedGameMode?.id === "set-3" && (
+              <div className="flex gap-3 justify-center">
                 <Button
-                  onClick={() =>
-                    setGameState((prev) => ({ ...prev, isTaggingOut: true }))
-                  }
-                  disabled={
-                    !canPlayerTagOut ||
-                    gameState.isRolling ||
-                    gameState.turn !== "player"
-                  }
-                  className="flex-1 text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100">
+                  onClick={() => setGameState((prev) => ({ ...prev, isTaggingOut: true }))}
+                  disabled={!canPlayerTagOut || gameState.isRolling || gameState.turn !== "player"}
+                  className="flex-1 max-w-xs text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100"
+                >
                   Tag
                 </Button>
-              )}
 
-              {gameState.selectedGameMode?.id === "set-3" && (
                 <Button
                   onClick={() => handleEvolution("player")}
-                  disabled={
-                    !canPlayerEvolve ||
-                    gameState.isRolling ||
-                    gameState.turn !== "player"
-                  }
-                  className="flex-1 text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100">
+                  disabled={!canPlayerEvolve || gameState.isRolling || gameState.turn !== "player"}
+                  className="flex-1 max-w-xs text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100"
+                >
                   Evolve
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      )}
 
       {/* Replacement Phase Overlay - Rendered outside the main game content div */}
       {gameState.gamePhase === "inGame" &&
@@ -3173,8 +2773,7 @@ export default function CardGameArena() {
         gameState.selectedGameMode?.id === "set-3" && (
           <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <h4 className="text-white text-lg sm:text-xl font-semibold text-center mb-4">
-              Your spirit has been shattered! Summon a new guardian to the
-              arena:
+              Your spirit has been shattered! Summon a new guardian to the arena:
             </h4>
             <div className="grid grid-cols-2 grid-cols-2 gap-2">
               {gameState.player.benchCreatures
@@ -3189,14 +2788,11 @@ export default function CardGameArena() {
                   />
                 ))}
             </div>
-            {gameState.player.benchCreatures.filter((c) => c.currentHp > 0)
-              .length === 0 && (
-              <p className="text-red-400 text-sm mt-4">
-                No viable benched creatures. Game Over!
-              </p>
+            {gameState.player.benchCreatures.filter((c) => c.currentHp > 0).length === 0 && (
+              <p className="text-red-400 text-sm mt-4">No viable benched creatures. Game Over!</p>
             )}
           </div>
         )}
     </>
-  );
+  )
 }
