@@ -201,14 +201,13 @@ export default function CardGameArena() {
 
   //@ts-ignore
   const [gameState, setGameState] = useState<GameState>(() => {
-    const initialWins = loadWinTally()
     return {
       ...initialGameProgressState,
       gamePhase: "setup",
       selectedGameMode: null,
       isEndlessModeActive: false,
-      endlessWins: initialWins, // Initialize from localStorage
-      aiDifficulty: initialWins + 1, // Initialize AI difficulty
+      endlessWins: 0, // Always start at 0, load from localStorage only when endless mode is selected
+      aiDifficulty: 1, // Start with base difficulty
       endlessTrophies: {}, // Loaded in useEffect
       isAchievementsOpen: false,
     }
