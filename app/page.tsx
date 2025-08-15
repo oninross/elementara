@@ -1647,7 +1647,7 @@ export default function CardGameArena() {
             </p>
             <Button
               onClick={initiateGameSetup}
-              className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+              className="glass-button-primary text-lg px-8 py-4 rounded-full shadow-lg transition-all duration-300 hover:scale-105"
             >
               Start Game
             </Button>
@@ -1659,23 +1659,22 @@ export default function CardGameArena() {
           <div className="fixed top-4 right-4 z-50">
             <button
               onClick={() => setMenuOpen((open) => !open)}
-              className="w-12 h-12 rounded-full bg-white hover:bg-gray-100 text-black border-2 border-gray-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
+              className="glass-button w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105"
               aria-label="Open menu"
             >
               {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg flex flex-col p-4 gap-4 z-50">
+              <div className="absolute right-0 mt-2 w-56 glass-card flex flex-col p-4 gap-4 z-50">
                 <button
                   onClick={() => {
                     setMenuOpen(false)
-                    // Open How To Play modal or navigate
                     setGameState((prev) => ({
                       ...prev,
                       isInstructionsOpen: true,
-                    })) // Replace with your How To Play logic
+                    }))
                   }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition"
+                  className="glass-button-primary py-2 px-4 rounded-full transition-all duration-300 hover:scale-105"
                 >
                   How To Play
                 </button>
@@ -1684,16 +1683,16 @@ export default function CardGameArena() {
                   <button
                     onClick={() => {
                       setMenuOpen(false)
-                      handleBackToMenu() // Call your back to menu handler
+                      handleBackToMenu()
                     }}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
+                    className="glass-button-primary py-2 px-4 rounded-full transition-all duration-300 hover:scale-105"
                   >
                     Back to Main Menu
                   </button>
                 )}
 
-                <div className="border-t border-gray-200 pt-2 mt-2">
-                  <span className="text-xs text-gray-500 text-center block">v1.0.9</span>
+                <div className="border-t border-white/20 pt-2 mt-2">
+                  <span className="text-xs glass-text-muted text-center block">v1.0.9</span>
                 </div>
               </div>
             )}
@@ -1791,10 +1790,10 @@ export default function CardGameArena() {
                         <Button
                           onClick={() => handleChallengeSelection(true)}
                           variant="outline"
-                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
+                          className="glass-button w-full flex flex-col items-center justify-center p-4 h-auto group"
                         >
-                          <span className="text-xl font-bold mb-1 group-hover:text-white">Endless Challenge</span>
-                          <span className="text-sm text-black text-center group-hover:text-white flex items-center gap-2">
+                          <span className="text-xl font-bold mb-1 glass-text">Endless Challenge</span>
+                          <span className="text-sm glass-text text-center flex items-center gap-2">
                             <Trophy className="h-4 w-4 text-yellow-500" />
                             Record: {gameState.endlessTrophies[gameState.selectedGameMode.id] || 0} wins
                           </span>
@@ -1802,12 +1801,10 @@ export default function CardGameArena() {
                         <Button
                           onClick={() => handleChallengeSelection(false)}
                           variant="outline"
-                          className="w-full flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
+                          className="glass-button w-full flex flex-col items-center justify-center p-4 h-auto group"
                         >
-                          <span className="text-xl font-bold mb-1 group-hover:text-white">Standard Match</span>
-                          <span className="text-sm text-black text-center group-hover:text-white">
-                            A single battle for glory.
-                          </span>
+                          <span className="text-xl font-bold mb-1 glass-text">Standard Match</span>
+                          <span className="text-sm glass-text text-center">A single battle for glory.</span>
                         </Button>
                         <Button
                           onClick={() =>
@@ -1818,7 +1815,7 @@ export default function CardGameArena() {
                             }))
                           }
                           variant="ghost"
-                          className="text-white/70 hover:text-foreground mt-2"
+                          className="glass-button mt-2"
                         >
                           <ChevronLeft /> Back to Mode Selection
                         </Button>
@@ -1832,19 +1829,17 @@ export default function CardGameArena() {
                               key={mode.id}
                               onClick={() => handleModeSelection(mode)}
                               variant="outline"
-                              className="flex flex-col items-center justify-center p-4 h-auto text-black border-white/30 hover:bg-white/30 group"
+                              className="glass-button flex flex-col items-center justify-center p-4 h-auto group"
                             >
-                              <span className="text-xl font-bold mb-1 group-hover:text-white">{mode.name}</span>
-                              <span className="text-sm text-black text-center group-hover:text-white">
-                                {mode.description}
-                              </span>
+                              <span className="text-xl font-bold mb-1 glass-text">{mode.name}</span>
+                              <span className="text-sm glass-text text-center">{mode.description}</span>
                             </Button>
                           ))}
                         </div>
                         <Button
                           onClick={openAchievements}
                           variant="ghost"
-                          className="text-white/70 hover:text-foreground mt-4 flex items-center gap-2"
+                          className="glass-button mt-4 flex items-center gap-2"
                         >
                           <Trophy className="h-5 w-5 text-yellow-400" />
                           View Achievements
