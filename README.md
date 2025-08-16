@@ -2,7 +2,7 @@
 
 _Automatically synced with your [v0.dev](https://v0.dev) deployments_
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/oninross-projects/v0-elementara)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/oninrossdeloittes-projects/v0-elementara)
 [![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/lgVWcJYF0Y6)
 
 ## Overview
@@ -14,7 +14,7 @@ Any changes you make to your deployed app will be automatically pushed to this r
 
 Your project is live at:
 
-**[https://vercel.com/oninross-projects/v0-elementara](https://vercel.com/oninross-projects/v0-elementara)**
+**[https://vercel.com/oninrossdeloittes-projects/v0-elementara](https://vercel.com/oninrossdeloittes-projects/v0-elementara)**
 
 ## Build your app
 
