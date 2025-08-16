@@ -56,12 +56,12 @@ export const handleWin = (
       }
     }
 
-    // 2. Surviving Elementals heal 30% HP.
-    // 3. Any KO'd Elementals return to play at 50% HP.
+    // 2. Existing Elementals de-evolve back to level 1 with HP restore of 75%
+    // 3. KO'd Elementals return to play at 50% HP
     const wasKOd = deEvolvedCreature.currentHp <= 0
     const newHp = wasKOd
-      ? Math.floor(deEvolvedCreature.maxHp * 0.5) // KO'd return at 50%
-      : Math.max(deEvolvedCreature.currentHp, Math.floor(deEvolvedCreature.maxHp * 0.3)) // Surviving healed to 30% (or current if higher)
+      ? Math.ceil(deEvolvedCreature.maxHp * 0.5) // KO'd return at 50% (rounded up)
+      : Math.ceil(deEvolvedCreature.maxHp * 0.75) // Existing creatures heal to 75% (rounded up)
 
     return {
       ...deEvolvedCreature,

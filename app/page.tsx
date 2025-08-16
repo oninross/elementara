@@ -1702,7 +1702,7 @@ export default function CardGameArena() {
                 )}
 
                 <div className="border-t border-gray-200 pt-2 mt-2">
-                  <span className="text-xs text-gray-500 text-center block">v1.0.9</span>
+                  <span className="text-xs text-gray-500 text-center block">v1.1.0</span>
                 </div>
               </div>
             )}
