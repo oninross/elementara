@@ -33,7 +33,7 @@ import {
   Droplet,
   Sprout,
   Egg,
-  ChartColumnBig,
+  BarChart3,
   TrophyIcon,
   BrainCircuit,
   Shell,
@@ -270,15 +270,14 @@ export default function CardGameArena() {
   }, [])
 
   const restartGame = useCallback(() => {
-    const initialWins = loadWinTally() // Load current win tally for endless mode
     //@ts-ignore
     setGameState((prev) => ({
       ...initialGameProgressState,
       gamePhase: "setup",
       selectedGameMode: null,
       isEndlessModeActive: false,
-      endlessWins: initialWins,
-      aiDifficulty: initialWins + 1,
+      endlessWins: 0, // Always start at 0 for fresh game
+      aiDifficulty: 1, // Reset to base difficulty
       endlessTrophies: prev.endlessTrophies,
       isAchievementsOpen: false,
     }))
@@ -286,15 +285,14 @@ export default function CardGameArena() {
   }, [addToLog])
 
   const handleBackToMenu = useCallback(() => {
-    const initialWins = loadWinTally() // Load current win tally for endless mode
     //@ts-ignore
     setGameState((prev) => ({
       ...initialGameProgressState,
       gamePhase: "modeSelection",
       selectedGameMode: null,
       isEndlessModeActive: false,
-      endlessWins: initialWins,
-      aiDifficulty: initialWins + 1,
+      endlessWins: 0, // Always start at 0 when returning to menu
+      aiDifficulty: 1, // Reset to base difficulty
       endlessTrophies: prev.endlessTrophies,
       isAchievementsOpen: false,
     }))
@@ -306,14 +304,13 @@ export default function CardGameArena() {
     setGameState((prev) => {
       if (!prev.selectedGameMode) {
         // Fallback to a full menu return if something went wrong
-        const initialWins = loadWinTally()
         return {
           ...initialGameProgressState,
           gamePhase: "modeSelection",
           selectedGameMode: null,
           isEndlessModeActive: false,
-          endlessWins: initialWins,
-          aiDifficulty: initialWins + 1,
+          endlessWins: 0, // Always start at 0 in fallback
+          aiDifficulty: 1, // Reset to base difficulty
           endlessTrophies: prev.endlessTrophies,
           isAchievementsOpen: false,
         }
@@ -549,8 +546,20 @@ export default function CardGameArena() {
         }
       }
 
-      // Generate new opponent based on new win tally
       const newOpponentCreatures = generateOpponentCreatures(newWins, prev.selectedGameMode)
+
+      // Set up opponent with active creature face up and bench creatures face down
+      const opponentActive = newOpponentCreatures[0]
+        ? {
+            ...newOpponentCreatures[0],
+            isFaceUp: true, // Active creature is face up
+          }
+        : null
+
+      const opponentBench = newOpponentCreatures.slice(1).map((creature) => ({
+        ...creature,
+        isFaceUp: false, // Benched creatures are face down
+      }))
 
       addToLog(`Victory! You have ${newWins} wins. Prepare for the next challenger!`)
 
@@ -564,8 +573,8 @@ export default function CardGameArena() {
           benchCreatures: healedBench,
         },
         opponent: {
-          activeCreature: newOpponentCreatures[0] || null,
-          benchCreatures: newOpponentCreatures.slice(1),
+          activeCreature: opponentActive,
+          benchCreatures: opponentBench,
           skippedTurn: false,
         },
         turn: "player",
@@ -2063,7 +2072,7 @@ export default function CardGameArena() {
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
-                              <ChartColumnBig /> Use full HP stats, resistances, and weaknesses.
+                              <BarChart3 /> Use full HP stats, resistances, and weaknesses.
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
@@ -2097,7 +2106,7 @@ export default function CardGameArena() {
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
-                              <ChartColumnBig /> Use HP, resistances, and weaknesses.
+                              <BarChart3 /> Use HP, resistances, and weaknesses.
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
