@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, JSX } from "react";
+import { useState, useEffect, useCallback, useRef, type JSX } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -33,8 +33,7 @@ import {
   Droplet,
   Sprout,
   Egg,
-  ChartBarBig,
-  ChartColumnBig,
+  BarChart3,
   TrophyIcon,
   BrainCircuit,
   Shell,
@@ -62,6 +61,8 @@ type GamePhase =
   | "coinToss"
   | "inGame"
   | "gameOver";
+
+type ActionChoice = "attack" | "guard" | "charge" | "tag" | "evolve" | null;
 
 export interface GameMode {
   id: string;
@@ -135,6 +136,14 @@ interface GameState {
   endlessTrophies: Record<string, number>;
   isAchievementsOpen: boolean;
   isInstructionsOpen: boolean;
+
+  playerActionChoice: ActionChoice;
+  opponentActionChoice: ActionChoice;
+
+  playerIsGuarding: boolean;
+  playerIsCharged: boolean;
+  opponentIsGuarding: boolean;
+  opponentIsCharged: boolean;
 }
 
 const gameModes: GameMode[] = [
@@ -210,14 +219,13 @@ export default function CardGameArena() {
 
   //@ts-ignore
   const [gameState, setGameState] = useState<GameState>(() => {
-    const initialWins = loadWinTally();
     return {
       ...initialGameProgressState,
       gamePhase: "setup",
       selectedGameMode: null,
       isEndlessModeActive: false,
-      endlessWins: initialWins, // Initialize from localStorage
-      aiDifficulty: initialWins + 1, // Initialize AI difficulty
+      endlessWins: 0, // Always start at 0, load from localStorage only when endless mode is selected
+      aiDifficulty: 1, // Start with base difficulty
       endlessTrophies: {}, // Loaded in useEffect
       isAchievementsOpen: false,
     };
@@ -285,15 +293,14 @@ export default function CardGameArena() {
   );
 
   const restartGame = useCallback(() => {
-    const initialWins = loadWinTally(); // Load current win tally for endless mode
     //@ts-ignore
     setGameState((prev) => ({
       ...initialGameProgressState,
       gamePhase: "setup",
       selectedGameMode: null,
       isEndlessModeActive: false,
-      endlessWins: initialWins,
-      aiDifficulty: initialWins + 1,
+      endlessWins: 0, // Always start at 0 for fresh game
+      aiDifficulty: 1, // Reset to base difficulty
       endlessTrophies: prev.endlessTrophies,
       isAchievementsOpen: false,
     }));
@@ -301,15 +308,14 @@ export default function CardGameArena() {
   }, [addToLog]);
 
   const handleBackToMenu = useCallback(() => {
-    const initialWins = loadWinTally(); // Load current win tally for endless mode
     //@ts-ignore
     setGameState((prev) => ({
       ...initialGameProgressState,
       gamePhase: "modeSelection",
       selectedGameMode: null,
       isEndlessModeActive: false,
-      endlessWins: initialWins,
-      aiDifficulty: initialWins + 1,
+      endlessWins: 0, // Always start at 0 when returning to menu
+      aiDifficulty: 1, // Reset to base difficulty
       endlessTrophies: prev.endlessTrophies,
       isAchievementsOpen: false,
     }));
@@ -321,14 +327,13 @@ export default function CardGameArena() {
     setGameState((prev) => {
       if (!prev.selectedGameMode) {
         // Fallback to a full menu return if something went wrong
-        const initialWins = loadWinTally();
         return {
           ...initialGameProgressState,
           gamePhase: "modeSelection",
           selectedGameMode: null,
           isEndlessModeActive: false,
-          endlessWins: initialWins,
-          aiDifficulty: initialWins + 1,
+          endlessWins: 0, // Always start at 0 in fallback
+          aiDifficulty: 1, // Reset to base difficulty
           endlessTrophies: prev.endlessTrophies,
           isAchievementsOpen: false,
         };
@@ -433,91 +438,115 @@ export default function CardGameArena() {
     ): number => {
       let finalDamage = baseDamage;
 
-      // Apply evolution buffs for damage dealt (attacker)
+      // Evolution buffs (already in multiples of 10)
       if (attacker.stage === "Level 2") {
         finalDamage += 10;
       } else if (attacker.stage === "Level 3") {
         finalDamage += 20;
       }
 
-      // Apply AI difficulty damage buff if opponent is attacking
+      // AI difficulty buff (already in multiples of 5)
       if (gameState.turn === "opponent") {
-        finalDamage += gameState.aiDifficulty - 1; // Add (difficulty - 1) extra damage
-        addToLog(
-          `Opponent's AI difficulty adds ${
-            gameState.aiDifficulty - 1
-          } extra damage!`
-        );
+        finalDamage += (gameState.aiDifficulty - 1) * 5;
       }
 
-      // Apply weakness/resistance only if not a critical miss
+      // Weakness/Resistance
       if (!isCriticalMiss) {
         if (defender.weakness === attacker.element) {
           finalDamage += 10;
-          addToLog(
-            `${defender.name} is weak to ${attacker.element}! Extra 10 damage.`
-          );
         } else if (defender.resistance === attacker.element) {
-          finalDamage -= 10;
-          addToLog(
-            `${defender.name} resists ${attacker.element}! Reduced 10 damage.`
-          );
+          // Round to nearest 5 after reducing by 50%
+          const resistanceReduction = Math.floor(finalDamage * 0.5);
+          finalDamage -= resistanceReduction;
+          finalDamage = Math.ceil(finalDamage / 5) * 5; // Round up to nearest 5
+          finalDamage = Math.max(5, finalDamage); // Minimum 5 damage instead of 2
         }
       }
 
-      // Apply evolution buffs for damage received (defender) - SUBTRACT from final damage
+      // Evolution defense buffs
       if (defender.stage === "Level 2") {
         finalDamage -= 10;
       } else if (defender.stage === "Level 3") {
         finalDamage -= 20;
       }
 
-      finalDamage = Math.max(0, finalDamage);
+      // Guard halving (round up to nearest 5)
+      if (
+        (defender === gameState.player.activeCreature &&
+          gameState.playerIsGuarding) ||
+        (defender === gameState.opponent.activeCreature &&
+          gameState.opponentIsGuarding)
+      ) {
+        finalDamage = Math.ceil(finalDamage / 2);
+        finalDamage = Math.ceil(finalDamage / 5) * 5; // Round up to nearest 5
+      }
+
+      // Charge bonus (already in multiples of 10)
+      if (
+        (attacker === gameState.player.activeCreature &&
+          gameState.playerIsCharged) ||
+        (attacker === gameState.opponent.activeCreature &&
+          gameState.opponentIsCharged)
+      ) {
+        finalDamage += 10;
+      }
+
+      // Final minimum check
+      finalDamage = Math.max(5, finalDamage); // Minimum 5 damage instead of 1
 
       // Add damage animation for the defender
-      addDamageAnimation(defender.instanceId, finalDamage); // <-- use instanceId
+      addDamageAnimation(defender.instanceId, finalDamage);
 
       setGameState((prev) => {
         const updatedPlayer = { ...prev.player };
         const updatedOpponent = { ...prev.opponent };
 
-        // Apply damage to the correct active creature (player or opponent)
-        if (
-          prev.player.activeCreature &&
-          prev.player.activeCreature.instanceId === defender.instanceId
-        ) {
-          updatedPlayer.activeCreature = {
-            ...prev.player.activeCreature,
-            currentHp: Math.max(
-              0,
-              prev.player.activeCreature.currentHp - finalDamage
-            ),
-          };
-        } else if (
-          prev.opponent.activeCreature &&
-          prev.opponent.activeCreature.instanceId === defender.instanceId
-        ) {
-          updatedOpponent.activeCreature = {
-            ...prev.opponent.activeCreature,
-            currentHp: Math.max(
-              0,
-              prev.opponent.activeCreature.currentHp - finalDamage
-            ),
-          };
-        }
+        const shouldUpdatePlayer = isCriticalMiss
+          ? prev.turn === "player" // Critical miss: damage the current turn's player
+          : prev.turn === "opponent"; // Normal attack: damage the opposite side
 
-        // Also update bench creatures if needed
-        updatedPlayer.benchCreatures = updatedPlayer.benchCreatures.map((c) =>
-          c.instanceId === defender.instanceId
-            ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) }
-            : c
-        );
-        updatedOpponent.benchCreatures = updatedOpponent.benchCreatures.map(
-          (c) =>
+        if (shouldUpdatePlayer) {
+          // Update player's active creature if it's the defender
+          if (
+            prev.player.activeCreature &&
+            prev.player.activeCreature.instanceId === defender.instanceId
+          ) {
+            updatedPlayer.activeCreature = {
+              ...prev.player.activeCreature,
+              currentHp: Math.max(
+                0,
+                prev.player.activeCreature.currentHp - finalDamage
+              ),
+            };
+          }
+          // Update player's bench creatures
+          updatedPlayer.benchCreatures = updatedPlayer.benchCreatures.map((c) =>
             c.instanceId === defender.instanceId
               ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) }
               : c
-        );
+          );
+        } else {
+          // Update opponent's active creature if it's the defender
+          if (
+            prev.opponent.activeCreature &&
+            prev.opponent.activeCreature.instanceId === defender.instanceId
+          ) {
+            updatedOpponent.activeCreature = {
+              ...prev.opponent.activeCreature,
+              currentHp: Math.max(
+                0,
+                prev.opponent.activeCreature.currentHp - finalDamage
+              ),
+            };
+          }
+          // Update opponent's bench creatures
+          updatedOpponent.benchCreatures = updatedOpponent.benchCreatures.map(
+            (c) =>
+              c.instanceId === defender.instanceId
+                ? { ...c, currentHp: Math.max(0, c.currentHp - finalDamage) }
+                : c
+          );
+        }
 
         return {
           ...prev,
@@ -579,11 +608,23 @@ export default function CardGameArena() {
         };
       }
 
-      // Generate new opponent based on new win tally
       const newOpponentCreatures = generateOpponentCreatures(
         newWins,
         prev.selectedGameMode
       );
+
+      // Set up opponent with active creature face up and bench creatures face down
+      const opponentActive = newOpponentCreatures[0]
+        ? {
+            ...newOpponentCreatures[0],
+            isFaceUp: true, // Active creature is face up
+          }
+        : null;
+
+      const opponentBench = newOpponentCreatures.slice(1).map((creature) => ({
+        ...creature,
+        isFaceUp: false, // Benched creatures are face down
+      }));
 
       addToLog(
         `Victory! You have ${newWins} wins. Prepare for the next challenger!`
@@ -599,8 +640,8 @@ export default function CardGameArena() {
           benchCreatures: healedBench,
         },
         opponent: {
-          activeCreature: newOpponentCreatures[0] || null,
-          benchCreatures: newOpponentCreatures.slice(1),
+          activeCreature: opponentActive,
+          benchCreatures: opponentBench,
           skippedTurn: false,
         },
         turn: "player",
@@ -1050,33 +1091,29 @@ export default function CardGameArena() {
 
         switch (newValue) {
           case 1:
-            // Critical Miss - 10 damage to self
             damage = 10;
             addToLog(`${attacker.name} suffered a Critical Miss!`);
             applyDamage(attacker, attacker, damage, true);
             break;
           case 2:
           case 3:
-            // Normal Hit - 20 base damage to opponent
-            damage = 20;
-            addToLog(`${attacker.name} landed a Normal Hit!`);
+            damage = 10;
+            addToLog(`${attacker.name} landed a Standard Hit!`);
             applyDamage(attacker, defender, damage);
             break;
           case 4:
           case 5:
-            // Strong Hit - 30 base damage to opponent
-            damage = 30;
-            addToLog(`${attacker.name} landed a Strong Hit!`);
+            damage = 20;
+            addToLog(`${attacker.name} landed a Power Hit!`);
             applyDamage(attacker, defender, damage);
             break;
           case 6:
-            // Critical Hit - 50 base damage to opponent + attacker forfeits next turn
             damage = 50;
             addToLog(`${attacker.name} landed a Critical Hit!`);
             applyDamage(attacker, defender, damage);
             addToLog(
               `${attacker.name} deals massive damage but forfeits their next turn!`
-            ); // Log for attacker
+            );
             break;
         }
 
@@ -1088,10 +1125,10 @@ export default function CardGameArena() {
             ...prev,
             playerActiveIsShaking:
               (isPlayerAttacking && isCriticalMiss) ||
-              (!isPlayerAttacking && !isCriticalMiss),
+              (!isPlayerAttacking && newValue >= 2 && newValue <= 6),
             opponentActiveIsShaking:
               (!isPlayerAttacking && isCriticalMiss) ||
-              (isPlayerAttacking && !isCriticalMiss),
+              (isPlayerAttacking && newValue >= 2 && newValue <= 6),
           };
         });
 
@@ -1817,19 +1854,18 @@ export default function CardGameArena() {
   return (
     <>
       {gameState.isEndlessModeActive && gameState.gamePhase === "inGame" && (
-        <div className="fixed top-4 left-4 z-50 flex items-center gap-2 bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-lg border border-white/20 shadow-lg">
-          <Trophy className="h-5 w-5 text-yellow-400" />
-          <span className="font-bold text-lg">{gameState.endlessWins}</span>
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white text-black px-3 py-1 rounded-full text-sm font-medium shadow-lg">
+          Wave {gameState.endlessWins + 1}
         </div>
       )}
       <div
         className={cn(
-          "min-h-screen p-2 sm:p-4 relative flex items-center justify-center bg-black",
+          "min-h-screen p-2 sm:p-4 relative flex items-center justify-center",
           gameState.replacementPhaseForPlayer &&
             "opacity-30 pointer-events-none" // Dim and disable interaction
         )}>
         {gameState.gamePhase === "setup" && (
-          <div className="fixed inset-0 flex flex-col items-center justify-center bg-black text-white p-4 text-center z-20">
+          <div className="fixed inset-0 flex flex-col items-center justify-center text-white p-4 text-center z-20">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 drop-shadow-lg">
               Welcome to Elementara
               <br />
@@ -1896,6 +1932,12 @@ export default function CardGameArena() {
                     Back to Main Menu
                   </button>
                 )}
+
+                <div className="border-t border-gray-200 pt-2 mt-2">
+                  <span className="text-xs text-gray-500 text-center block">
+                    v1.1.0
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -2333,8 +2375,8 @@ export default function CardGameArena() {
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
-                              <ChartColumnBig /> Use full HP stats, resistances,
-                              and weaknesses.
+                              <BarChart3 /> Use full HP stats, resistances, and
+                              weaknesses.
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
@@ -2371,8 +2413,7 @@ export default function CardGameArena() {
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
-                              <ChartColumnBig /> Use HP, resistances, and
-                              weaknesses.
+                              <BarChart3 /> Use HP, resistances, and weaknesses.
                             </p>
 
                             <p className="flex items-center gap-4 text-sm">
@@ -2446,33 +2487,7 @@ export default function CardGameArena() {
                         isCriticalMiss={gameState.isCriticalMiss}
                         isCriticalHit={gameState.isCriticalHit}
                       />
-                      {/* Corruption Status Indicator - only show in Evolution Mode */}
-                      {gameState.isCorrupted &&
-                        gameState.selectedGameMode?.id === "set-3" && (
-                          <div className="absolute top-8 z-50 flex flex-col items-center gap-2 w-50">
-                            <div className="bg-purple-900/80 backdrop-blur-sm rounded-lg px-4 py-2 border border-purple-500 w-full">
-                              <div className="flex items-center gap-2">
-                                <Shell className="w-16 h-16" />
-                                <span className="text-white font-bold text-center">
-                                  CORRUPTED DIE
-                                </span>
-                                <Shell className="w-16 h-16" />
-                              </div>
-                              {/* <div className="text-center text-purple-200 text-sm mt-1">
-                                {gameState.corruptedTurnsRemaining} turns
-                                remaining
-                              </div> */}
-                              {gameState.corruptedPlayer && (
-                                <div className="text-center text-purple-300 text-xs mt-1">
-                                  {gameState.corruptedPlayer === "player"
-                                    ? "Your creature"
-                                    : "Opponent's creature"}{" "}
-                                  is empowered!
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
+                      {/* ...corruption indicator... */}
                     </div>
                   )}
               </div>
@@ -3068,46 +3083,94 @@ export default function CardGameArena() {
       </div>
       {gameState.gamePhase === "inGame" &&
         !gameState.replacementPhaseForPlayer && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-black/70 backdrop-blur-sm flex justify-center items-center">
-            <div className="flex gap-3 w-full max-w-md">
-              {gameState.selectedGameMode?.id === "set-3" && (
+          <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-black/20 backdrop-blur-sm">
+            <div className="w-full max-w-2xl mx-auto space-y-3">
+              {/* Top row: Attack, Guard, Charge */}
+              <div className="flex gap-3">
                 <Button
-                  onClick={() =>
-                    setGameState((prev) => ({ ...prev, isTaggingOut: true }))
-                  }
+                  onClick={() => {
+                    setGameState((prev) => ({
+                      ...prev,
+                      playerActionChoice: "attack",
+                      hasRolledThisTurn: true,
+                    }));
+                    rollDice(); // Execute attack immediately
+                  }}
                   disabled={
-                    !canPlayerTagOut ||
+                    gameState.hasRolledThisTurn ||
                     gameState.isRolling ||
                     gameState.turn !== "player"
                   }
-                  variant="default"
-                  className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md">
-                  Tag
+                  className="flex-1 text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100">
+                  Attack
                 </Button>
-              )}
-              <Button
-                onClick={rollDice} // Always call rollDice now
-                disabled={
-                  gameState.hasRolledThisTurn ||
-                  gameState.isRolling ||
-                  gameState.turn !== "player"
-                }
-                variant="default"
-                className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md">
-                Roll
-              </Button>
-              {gameState.selectedGameMode?.id === "set-3" && (
+
                 <Button
-                  onClick={() => handleEvolution("player")}
+                  onClick={() => {
+                    setGameState((prev) => ({
+                      ...prev,
+                      playerActionChoice: "guard",
+                      playerIsGuarding: true,
+                      hasRolledThisTurn: true,
+                    }));
+                    endTurn(); // End turn after choosing guard
+                  }}
                   disabled={
-                    !canPlayerEvolve ||
+                    gameState.hasRolledThisTurn ||
                     gameState.isRolling ||
                     gameState.turn !== "player"
                   }
-                  variant="default"
-                  className="flex-1 bg-white text-black hover:bg-gray-100 text-lg px-6 py-3 rounded-md">
-                  Evolve
+                  className="flex-1 text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100">
+                  Guard
                 </Button>
+
+                <Button
+                  onClick={() => {
+                    setGameState((prev) => ({
+                      ...prev,
+                      playerActionChoice: "charge",
+                      playerIsCharged: true,
+                      hasRolledThisTurn: true,
+                    }));
+                    endTurn(); // End turn after choosing charge
+                  }}
+                  disabled={
+                    gameState.hasRolledThisTurn ||
+                    gameState.isRolling ||
+                    gameState.turn !== "player"
+                  }
+                  className="flex-1 text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100">
+                  Charge
+                </Button>
+              </div>
+
+              {/* Bottom row: Tag and Evolve (Set 3 only) */}
+              {gameState.selectedGameMode?.id === "set-3" && (
+                <div className="flex gap-3 justify-center">
+                  <Button
+                    onClick={() =>
+                      setGameState((prev) => ({ ...prev, isTaggingOut: true }))
+                    }
+                    disabled={
+                      !canPlayerTagOut ||
+                      gameState.isRolling ||
+                      gameState.turn !== "player"
+                    }
+                    className="flex-1 max-w-xs text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100">
+                    Tag
+                  </Button>
+
+                  <Button
+                    onClick={() => handleEvolution("player")}
+                    disabled={
+                      !canPlayerEvolve ||
+                      gameState.isRolling ||
+                      gameState.turn !== "player"
+                    }
+                    className="flex-1 max-w-xs text-lg px-6 py-3 rounded-md font-medium bg-white text-black hover:bg-gray-100">
+                    Evolve
+                  </Button>
+                </div>
               )}
             </div>
           </div>
