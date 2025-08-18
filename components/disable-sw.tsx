@@ -7,7 +7,10 @@ import { useEffect } from "react";
  */
 export default function DisableSW() {
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
+    if (
+      process.env.NODE_ENV === "development" &&
+      "serviceWorker" in navigator
+    ) {
       navigator.serviceWorker
         .getRegistrations()
         .then((regs) => regs.forEach((r) => r.unregister()))
