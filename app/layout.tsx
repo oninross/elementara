@@ -2,6 +2,8 @@ import type React from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import DisableSW from "@/components/disable-sw";
+import { Analytics } from "@vercel/analytics/react";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Elementara Card Game",
@@ -22,9 +24,13 @@ export const metadata: Metadata = {
   },
 };
 
-import { Inter } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-dm-sans",
+});
 
 export default function RootLayout({
   children,
@@ -33,9 +39,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <DisableSW /> {/* ← unregister Service Workers in the preview */}
-        {children}
+      <body className={`${dmSans.variable} ${dmSans.className} bg-black/50`}>
+        <Suspense fallback={null}>
+          <DisableSW /> {/* ← unregister Service Workers in the preview */}
+          {children}
+          <Analytics />
+        </Suspense>
       </body>
     </html>
   );
