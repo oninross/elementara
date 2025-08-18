@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Creature, Element } from "@/lib/creatures";
 import { Droplet, Flame, Info, Sprout, Wind } from "lucide-react";
-import { JSX, useState } from "react";
+import { type JSX, useState } from "react";
 
 interface CreatureCardProps {
   creature: Creature;
@@ -84,11 +84,12 @@ const creatureImages: Record<string, string> = {
   magdanok: "/images/magdanok.jpeg",
   sunuko: "/images/sunuko.jpeg",
   sigael: "/images/sigael.jpeg",
-  pyrocrys: "/images/pyrocrys.jpeg",
-  infernuko: "/images/infernuko.jpeg",
-  solaurix: "/images/solaurix.jpeg",
+  asonis: "/images/asonis.jpeg",
+  silabrix: "/images/silabrix.jpeg",
+  alkaulon: "/images/alkaulon.jpeg",
   liyabon: "/images/liyabon.jpeg",
   drakalayo: "/images/drakalayo.jpeg",
+  infernuko: "/images/infernuko.jpeg",
 
   // Water creatures
   sireniya: "/images/sireniya.jpeg",
