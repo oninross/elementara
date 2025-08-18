@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from "uuid";
+
 export type Element = "Fire" | "Water" | "Earth" | "Air";
 export type CreatureStage = "Level 1" | "Level 2" | "Level 3";
 
@@ -30,7 +32,7 @@ export const createCreature = (
   evolutionLine: string[]
 ): Creature => ({
   id,
-  instanceId: crypto.randomUUID(),
+  instanceId: uuidv4(),
   name,
   element,
   maxHp,
