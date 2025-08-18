@@ -36,7 +36,7 @@ export const saveWinTally = (tally: number) => {
 export const handleWin = (
   currentGameState: GameState,
   playerCreatures: Creature[],
-  selectedGameMode: GameMode,
+  selectedGameMode: GameMode
 ): GameState => {
   const newWinTally = currentGameState.winTally + 1;
   saveWinTally(newWinTally);
@@ -56,15 +56,12 @@ export const handleWin = (
       }
     }
 
-    // 2. All active Elementals are healed to 75% max HP.
-    // 3. Any KO’d Elementals return to play at 50% HP.
+    // 2. Existing Elementals de-evolve back to level 1 with HP restore of 75%
+    // 3. KO'd Elementals return to play at 50% HP
     const wasKOd = deEvolvedCreature.currentHp <= 0;
     const newHp = wasKOd
-      ? Math.floor(deEvolvedCreature.maxHp * 0.5) // KO'd return at 50%
-      : Math.max(
-          deEvolvedCreature.currentHp,
-          Math.floor(deEvolvedCreature.maxHp * 0.75),
-        ); // Active healed to 75% (or current if higher)
+      ? Math.ceil(deEvolvedCreature.maxHp * 0.5) // KO'd return at 50% (rounded up)
+      : Math.ceil(deEvolvedCreature.maxHp * 0.75); // Existing creatures heal to 75% (rounded up)
 
     return {
       ...deEvolvedCreature,
@@ -98,7 +95,7 @@ export const handleLoss = (currentGameState: GameState): GameState => {
 // Function to generate opponent creatures based on win tally
 export const generateOpponentCreatures = (
   winCount: number,
-  gameMode: GameMode,
+  gameMode: GameMode
 ): Creature[] => {
   const opponentCreatureIds: string[] = [];
   let creaturesForOpponentSelection: Creature[] = [];
@@ -138,7 +135,7 @@ export const generateOpponentCreatures = (
         template.resistance,
         template.ability,
         template.stage,
-        template.evolutionLine,
+        template.evolutionLine
       ),
       isFaceUp: true,
       // You might want to add a property to Creature to store AI damage buff
